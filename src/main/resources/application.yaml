@@ -1,0 +1,44 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/physical_exercise?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+  
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath*:/mapper/**/*.xml
+
+# JWT配置
+jwt:
+  # 这是一个 Base64 编码的 64 字节密钥
+  secret: "bXlfc3VwZXJfc2VjcmV0X2tleV90aGF0X2lzX2xvbmdfZW5vdWdoX2Zvcl9oczUxMl9hbGdvcml0aG1fYW5kX2l0X2lzX2Jhc2U2NF9lbmNvZGVk"
+  expiration: 86400000  # 24小时
+
+# 添加日志配置
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.boot.web.embedded.tomcat: DEBUG
+    org.apache.tomcat: DEBUG
+    org.apache.catalina: DEBUG
