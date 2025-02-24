@@ -27,7 +27,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public User findByUsername(String username) {
         return getOne(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, username)
-                .eq(User::getEnabled, true));
+                .eq(User::getEnabled, 1));
     }
 
     @Override
@@ -36,11 +36,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (findByUsername(user.getUsername()) != null) {
             throw new RuntimeException("用户名已存在");
         }
-
         // 加密密码
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setEnabled(true);
-
         // 保存用户
         save(user);
     }

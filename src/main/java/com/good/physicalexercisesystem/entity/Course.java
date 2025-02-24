@@ -5,33 +5,38 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("sys_user")
-public class User {
+@TableName("pe_course")
+public class Course {
     @TableId(type = IdType.AUTO)
     private Long id;
-
-    private String username;
-
-    private String password;
-
+    
     private String name;
-
-    private String userType; // admin, teacher, student
-
-    private String phone;
-
-    private String email;
-
-    private String gender;
-
+    
+    private Long teacherId;
+    
+    @TableField(exist = false)
+    private String teacherName;
+    
+    private String type; // required, optional
+    
+    private String time;
+    
+    private String location;
+    
+    private Integer capacity;
+    
+    private Integer enrolled;
+    
+    private String description;
+    
     private Integer enabled;
-
+    
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
-
+    
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
-
+    
     @TableLogic
     private Integer deleted;
-}
+} 
