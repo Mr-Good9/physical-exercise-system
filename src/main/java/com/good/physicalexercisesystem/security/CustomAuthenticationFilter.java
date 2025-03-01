@@ -2,12 +2,11 @@ package com.good.physicalexercisesystem.security;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.good.physicalexercisesystem.common.ApiResponse;
+import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.dto.LoginDTO;
 import com.good.physicalexercisesystem.entity.User;
 import com.good.physicalexercisesystem.service.UserService;
 import com.good.physicalexercisesystem.utils.JwtUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -93,7 +92,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_OK);
-        objectMapper.writeValue(response.getOutputStream(), ApiResponse.success("登录成功", result));
+        objectMapper.writeValue(response.getOutputStream(), CommonResult.success("登录成功", result));
     }
 
     @Override
@@ -112,6 +111,6 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
         System.err.println("Authentication failed: " + errorMessage);
         failed.printStackTrace();
 
-        objectMapper.writeValue(response.getOutputStream(), ApiResponse.error(401, errorMessage));
+        objectMapper.writeValue(response.getOutputStream(), CommonResult.error(401, errorMessage));
     }
 }

@@ -20,7 +20,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -56,7 +55,7 @@ public class SecurityConfig {
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
@@ -64,7 +63,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
-        CustomAuthenticationFilter customAuthenticationFilter = 
+        CustomAuthenticationFilter customAuthenticationFilter =
             new CustomAuthenticationFilter(authenticationManager, userService, jwtUtils, objectMapper);
         customAuthenticationFilter.setFilterProcessesUrl("/auth/login");
 
@@ -77,6 +76,7 @@ public class SecurityConfig {
             .authorizeRequests()
             .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .antMatchers("/auth/**").permitAll()
+            .antMatchers("/user/avatar").permitAll()  // 临时允许，方便测试
             .anyRequest().authenticated()
             .and()
             .addFilter(customAuthenticationFilter)

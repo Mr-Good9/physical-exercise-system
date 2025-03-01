@@ -1,0 +1,2 @@
+ALTER TABLE sys_user
+ADD COLUMN avatar TEXT COMMENT '头像URL'; 

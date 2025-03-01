@@ -1,7 +1,7 @@
 package com.good.physicalexercisesystem.controller.student;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.good.physicalexercisesystem.common.ApiResponse;
+import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.entity.PhysicalTestItem;
 import com.good.physicalexercisesystem.entity.PhysicalTestRecord;
 import com.good.physicalexercisesystem.entity.User;
@@ -27,12 +27,12 @@ public class PhysicalTestController {
     }
 
     @GetMapping("/items")
-    public ApiResponse<List<PhysicalTestItem>> getTestItems() {
-        return ApiResponse.success(physicalTestService.getTestItems());
+    public CommonResult<List<PhysicalTestItem>> getTestItems() {
+        return CommonResult.success(physicalTestService.getTestItems());
     }
 
     @GetMapping("/records")
-    public ApiResponse<Page<PhysicalTestRecordVO>> getTestRecords(
+    public CommonResult<Page<PhysicalTestRecordVO>> getTestRecords(
             Authentication authentication,
             @RequestParam(required = false) String itemCode,
             @RequestParam(defaultValue = "1") Integer current,
@@ -40,15 +40,15 @@ public class PhysicalTestController {
     ) {
         User user = userService.findByUsername(authentication.getName());
         Page<PhysicalTestRecord> page = new Page<>(current, size);
-        return ApiResponse.success(
+        return CommonResult.success(
             physicalTestService.getStudentTestRecords(user.getId(), itemCode, page)
         );
     }
 
     @GetMapping("/statistics")
-    public ApiResponse<Map<String, Object>> getTestStatistics(Authentication authentication) {
+    public CommonResult<Map<String, Object>> getTestStatistics(Authentication authentication) {
         User user = userService.findByUsername(authentication.getName());
-        return ApiResponse.success(
+        return CommonResult.success(
             physicalTestService.getStudentTestStatistics(user.getId())
         );
     }

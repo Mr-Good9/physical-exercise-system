@@ -9,12 +9,16 @@ spring:
     url: jdbc:mysql://localhost:3306/physical_exercise?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
     password: 123456
-  
+
   # 文件上传配置
   servlet:
     multipart:
+      # 单个文件大小限制
       max-file-size: 10MB
+      # 总上传数据大小限制
       max-request-size: 100MB
+      # 文件写入磁盘的阈值
+      file-size-threshold: 2KB
 
 mybatis-plus:
   configuration:
@@ -42,3 +46,11 @@ logging:
     org.springframework.boot.web.embedded.tomcat: DEBUG
     org.apache.tomcat: DEBUG
     org.apache.catalina: DEBUG
+
+# MinIO配置
+minio:
+  endpoint: http://localhost:9005
+  accessKey: admin
+  secretKey: 12345678
+  bucket: avatars
+  public: true  # 允许公共访问

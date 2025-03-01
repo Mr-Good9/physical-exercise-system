@@ -1,7 +1,7 @@
 package com.good.physicalexercisesystem.controller.student;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.good.physicalexercisesystem.common.ApiResponse;
+import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.entity.Course;
 import com.good.physicalexercisesystem.entity.User;
 import com.good.physicalexercisesystem.service.CourseService;
@@ -22,36 +22,58 @@ public class CourseController {
         this.userService = userService;
     }
 
+    /**
+     * 获取课程列表
+     *
+     * @param name
+     * @param type
+     * @param current
+     * @param size
+     * @return
+     */
     @GetMapping("/list")
-    public ApiResponse<Page<CourseVO>> getCourseList(
-            Authentication authentication,
+    public CommonResult<Page<CourseVO>> getCourseList(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size
     ) {
-        User user = userService.findByUsername(authentication.getName());
         Page<Course> page = new Page<>(current, size);
-        return ApiResponse.success(courseService.getCourseList(name, type, page, user.getId()));
+        Page<CourseVO> result = courseService.getCourseList(name, type, page);
+        // 即使没有数据也返回成功,只是 records 为空数组
+        return CommonResult.success(result);
     }
 
+    /**
+     * 选课
+     *
+     * @param authentication
+     * @param courseId
+     * @return
+     */
     @PostMapping("/{courseId}/enroll")
-    public ApiResponse<Void> enrollCourse(
+    public CommonResult<Void> enrollCourse(
             Authentication authentication,
             @PathVariable Long courseId
     ) {
         User user = userService.findByUsername(authentication.getName());
         courseService.enrollCourse(user.getId(), courseId);
-        return ApiResponse.success("选课成功", null);
+        return CommonResult.success("选课成功", null);
     }
 
+    /**
+     * 退课
+     * @param authentication
+     * @param courseId
+     * @return
+     */
     @PostMapping("/{courseId}/drop")
-    public ApiResponse<Void> dropCourse(
+    public CommonResult<Void> dropCourse(
             Authentication authentication,
             @PathVariable Long courseId
     ) {
         User user = userService.findByUsername(authentication.getName());
         courseService.dropCourse(user.getId(), courseId);
-        return ApiResponse.success("退课成功", null);
+        return CommonResult.success("退课成功", null);
     }
-} 
+}

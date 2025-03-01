@@ -34,4 +34,6 @@ public class User {
 
     @TableLogic
     private Integer deleted;
+
+    private String avatar;
 }
