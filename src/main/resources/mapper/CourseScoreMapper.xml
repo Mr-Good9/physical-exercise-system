@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.good.physicalexercisesystem.mapper.CourseScoreMapper">
+    
+    <!-- 查询课程成绩列表 -->
+    <select id="selectScoreList" resultType="com.good.physicalexercisesystem.vo.CourseScoreVO">
+        SELECT 
+            cs.*,
+            u.name as studentName,
+            u.username as studentId
+        FROM pe_course_score cs
+        LEFT JOIN sys_user u ON cs.student_id = u.id
+        WHERE cs.course_id = #{courseId}
+        AND cs.deleted = 0
+        ORDER BY cs.create_time DESC
+    </select>
+</mapper> 

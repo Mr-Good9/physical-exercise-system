@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.good.physicalexercisesystem.mapper.AttendanceRecordMapper">
+
+    <!-- 批量插入考勤记录 -->
+    <insert id="insertBatch">
+        INSERT INTO pe_course_attendance (
+            student_id, course_id, attendance_date, attendance_time,
+            status, remark, create_time, update_time
+        ) VALUES
+        <foreach collection="records" item="record" separator=",">
+            (
+                #{record.studentId}, #{record.courseId}, #{record.attendanceDate},
+                #{record.attendanceTime}, #{record.status}, #{record.remark},
+                NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 计算学生的出勤率 -->
+    <select id="calculateAttendanceRate" resultType="java.lang.Double">
+        SELECT
+            IFNULL(
+                COUNT(CASE WHEN status = 'present' THEN 1 END) * 100.0 / COUNT(*),
+                0
+            ) as attendance_rate
+        FROM pe_course_attendance
+        WHERE student_id = #{studentId}
+        AND is_deleted = 0
+    </select>
+
+</mapper>

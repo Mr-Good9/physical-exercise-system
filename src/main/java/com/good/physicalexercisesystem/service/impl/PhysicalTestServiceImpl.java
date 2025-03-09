@@ -2,14 +2,20 @@ package com.good.physicalexercisesystem.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.good.physicalexercisesystem.entity.PhysicalTestItem;
 import com.good.physicalexercisesystem.entity.PhysicalTestRecord;
+import com.good.physicalexercisesystem.dto.PhysicalTestRecordDTO;
+import com.good.physicalexercisesystem.dto.PhysicalTestQuery;
 import com.good.physicalexercisesystem.mapper.PhysicalTestItemMapper;
 import com.good.physicalexercisesystem.mapper.PhysicalTestRecordMapper;
 import com.good.physicalexercisesystem.service.PhysicalTestService;
 import com.good.physicalexercisesystem.vo.PhysicalTestRecordVO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,24 +24,45 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class PhysicalTestServiceImpl implements PhysicalTestService {
+public class PhysicalTestServiceImpl extends ServiceImpl<PhysicalTestRecordMapper, PhysicalTestRecord> implements PhysicalTestService {
 
-    private final PhysicalTestItemMapper testItemMapper;
-    private final PhysicalTestRecordMapper testRecordMapper;
+    @Autowired
+    private PhysicalTestItemMapper testItemMapper;
 
-    public PhysicalTestServiceImpl(PhysicalTestItemMapper testItemMapper,
-                                   PhysicalTestRecordMapper testRecordMapper) {
-        this.testItemMapper = testItemMapper;
-        this.testRecordMapper = testRecordMapper;
+    @Override
+    public IPage<PhysicalTestRecordDTO> getTestRecordList(Integer page, Integer pageSize, PhysicalTestQuery query) {
+        // 创建分页对象，注意页码从1开始
+        Page<PhysicalTestRecordDTO> pageParam = new Page<>(page, pageSize);
+        // 调用Mapper的分页查询方法
+        return baseMapper.selectTestRecordList(pageParam, query);
     }
 
     @Override
     public List<PhysicalTestItem> getTestItems() {
         return testItemMapper.selectList(
-                new LambdaQueryWrapper<PhysicalTestItem>()
-                        .eq(PhysicalTestItem::getEnabled, 1)
-                        .orderByAsc(PhysicalTestItem::getId)
+            new LambdaQueryWrapper<PhysicalTestItem>()
+                .eq(PhysicalTestItem::getEnabled, true)
+                .orderByAsc(PhysicalTestItem::getItemCode)
         );
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateTestScore(Long id, Integer score, String evaluation) {
+        PhysicalTestRecord record = new PhysicalTestRecord();
+        record.setId(id);
+        record.setScore(score);
+        record.setEvaluation(evaluation);
+        return updateById(record);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateTestComment(Long id, String teacherComment) {
+        PhysicalTestRecord record = new PhysicalTestRecord();
+        record.setId(id);
+        record.setTeacherComment(teacherComment);
+        return updateById(record);
     }
 
     @Override
@@ -55,7 +82,7 @@ public class PhysicalTestServiceImpl implements PhysicalTestService {
                 .orderByDesc(PhysicalTestRecord::getTestDate);
 
         // 执行分页查询
-        Page<PhysicalTestRecord> recordPage = testRecordMapper.selectPage(page, wrapper);
+        Page<PhysicalTestRecord> recordPage = baseMapper.selectPage(page, wrapper);
 
         // 转换为VO
         Page<PhysicalTestRecordVO> voPage = new Page<>(
@@ -87,7 +114,7 @@ public class PhysicalTestServiceImpl implements PhysicalTestService {
         Map<String, Object> statistics = new HashMap<>();
 
         // 获取最新的测试记录
-        PhysicalTestRecord latestRecord = testRecordMapper.selectOne(
+        PhysicalTestRecord latestRecord = baseMapper.selectOne(
                 new LambdaQueryWrapper<PhysicalTestRecord>()
                         .eq(PhysicalTestRecord::getStudentId, studentId)
                         .orderByDesc(PhysicalTestRecord::getTestDate)
@@ -106,7 +133,7 @@ public class PhysicalTestServiceImpl implements PhysicalTestService {
         }
 
         // 计算平均分
-        Double avgScore = testRecordMapper.selectObjs(
+        Double avgScore = baseMapper.selectObjs(
                         new LambdaQueryWrapper<PhysicalTestRecord>()
                                 .select(PhysicalTestRecord::getScore)
                                 .eq(PhysicalTestRecord::getStudentId, studentId)
@@ -118,14 +145,14 @@ public class PhysicalTestServiceImpl implements PhysicalTestService {
         statistics.put("averageScore", avgScore);
 
         // 获取测试总次数
-        Long totalTests = testRecordMapper.selectCount(
+        Long totalTests = baseMapper.selectCount(
                 new LambdaQueryWrapper<PhysicalTestRecord>()
                         .eq(PhysicalTestRecord::getStudentId, studentId)
         );
         statistics.put("totalTests", totalTests);
 
         // 获取及格次数（分数>=60）
-        Long passedTests = testRecordMapper.selectCount(
+        Long passedTests = baseMapper.selectCount(
                 new LambdaQueryWrapper<PhysicalTestRecord>()
                         .eq(PhysicalTestRecord::getStudentId, studentId)
                         .ge(PhysicalTestRecord::getScore, 60)
@@ -148,7 +175,7 @@ public class PhysicalTestServiceImpl implements PhysicalTestService {
         LambdaQueryWrapper<PhysicalTestRecord> wrapper = new LambdaQueryWrapper<PhysicalTestRecord>()
                 .eq(PhysicalTestRecord::getStudentId, studentId)
                 .orderByDesc(PhysicalTestRecord::getTestDate).last("LIMIT 10");
-        List<PhysicalTestRecord> physicalTestRecords = testRecordMapper.selectList(wrapper);
+        List<PhysicalTestRecord> physicalTestRecords = baseMapper.selectList(wrapper);
         // 获取测试记录的项目id
          List<Long> testItemIds = physicalTestRecords.stream()
                 .map(PhysicalTestRecord::getTestItemId)

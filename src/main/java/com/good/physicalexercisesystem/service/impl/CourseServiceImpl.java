@@ -2,42 +2,43 @@ package com.good.physicalexercisesystem.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.BeanUtils;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.good.physicalexercisesystem.entity.Course;
-import com.good.physicalexercisesystem.entity.CourseEnrollment;
-import com.good.physicalexercisesystem.entity.User;
-import com.good.physicalexercisesystem.mapper.CourseEnrollmentMapper;
-import com.good.physicalexercisesystem.mapper.CourseMapper;
-import com.good.physicalexercisesystem.mapper.UserMapper;
+import com.good.physicalexercisesystem.dto.CourseAttendanceDTO;
+import com.good.physicalexercisesystem.dto.CourseDTO;
+import com.good.physicalexercisesystem.dto.CourseScoreDTO;
+import com.good.physicalexercisesystem.entity.*;
+import com.good.physicalexercisesystem.mapper.*;
 import com.good.physicalexercisesystem.service.CourseService;
 import com.good.physicalexercisesystem.utils.UserContext;
+import com.good.physicalexercisesystem.vo.CourseAttendanceVO;
+import com.good.physicalexercisesystem.vo.CourseQuery;
+import com.good.physicalexercisesystem.vo.CourseScoreVO;
 import com.good.physicalexercisesystem.vo.CourseVO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(rollbackFor = Exception.class)
 public class CourseServiceImpl implements CourseService {
 
-    private final CourseMapper courseMapper;
-    private final CourseEnrollmentMapper enrollmentMapper;
-    private final UserMapper userMapper;
-
-    public CourseServiceImpl(CourseMapper courseMapper,
-                             CourseEnrollmentMapper enrollmentMapper,
-                             UserMapper userMapper) {
-        this.courseMapper = courseMapper;
-        this.enrollmentMapper = enrollmentMapper;
-        this.userMapper = userMapper;
-    }
+    @Autowired
+    private CourseMapper courseMapper;
+    @Autowired
+    private CourseEnrollmentMapper enrollmentMapper;
+    @Autowired
+    private UserMapper userMapper;
+    @Autowired
+    private CourseAttendanceMapper attendanceMapper;
+    @Autowired
+    private CourseScoreMapper scoreMapper;
 
     @Override
     public Page<CourseVO> getCourseList(String name, String type, Page<Course> page) {
@@ -109,7 +110,7 @@ public class CourseServiceImpl implements CourseService {
     public void enrollCourse(Long studentId, Long courseId) {
         // 检查课程是否存在且可选
         Course course = courseMapper.selectById(courseId);
-        if (course == null || course.getEnabled() != 1) {
+        if (course == null || !course.getEnabled()) {
             throw new RuntimeException("课程不存在或已关闭");
         }
 
@@ -216,5 +217,91 @@ public class CourseServiceImpl implements CourseService {
                 .count());
 
         return statistics;
+    }
+
+
+    @Override
+    public IPage<CourseVO> getCourseList(CourseQuery query, Page<CourseVO> page) {
+        return courseMapper.selectCourseList(page, query);
+    }
+
+    @Override
+    public CourseVO createCourse(CourseDTO courseDTO) {
+        Course course = new Course();
+        BeanUtil.copyProperties(courseDTO, course);
+        course.setTeacherId(UserContext.getUser().getId());
+        course.setStatus("pending");
+        course.setEnabled(true);
+        course.setEnrolled(0);
+        courseMapper.insert(course);
+        return convertToVO(course);
+    }
+
+    @Override
+    public CourseVO updateCourse(Long id, CourseDTO courseDTO) {
+        Course course = courseMapper.selectById(id);
+        if (course == null) {
+            throw new RuntimeException("课程不存在");
+        }
+        BeanUtil.copyProperties(courseDTO, course);
+        courseMapper.updateById(course);
+        return convertToVO(course);
+    }
+
+    @Override
+    public void deleteCourse(Long id) {
+        Course course = courseMapper.selectById(id);
+        if (course == null) {
+            throw new RuntimeException("课程不存在");
+        }
+        courseMapper.deleteById(id);
+    }
+
+    @Override
+    public List<CourseAttendanceVO> getCourseAttendance(Long courseId) {
+        return attendanceMapper.selectAttendanceList(courseId);
+    }
+
+    @Override
+    @Transactional
+    public void saveCourseAttendance(Long courseId, List<CourseAttendanceDTO> attendanceList) {
+        for (CourseAttendanceDTO dto : attendanceList) {
+            CourseAttendance attendance = new CourseAttendance();
+            attendance.setCourseId(courseId);
+            BeanUtil.copyProperties(dto, attendance);
+            attendanceMapper.insert(attendance);
+        }
+    }
+
+    @Override
+    public List<CourseScoreVO> getCourseScores(Long courseId) {
+        return scoreMapper.selectScoreList(courseId);
+    }
+
+    @Override
+    @Transactional
+    public void saveCourseScores(Long courseId, List<CourseScoreDTO> scoreList) {
+        for (CourseScoreDTO dto : scoreList) {
+            CourseScore score = new CourseScore();
+            score.setCourseId(courseId);
+            BeanUtil.copyProperties(dto, score);
+            scoreMapper.insert(score);
+        }
+    }
+
+    private CourseVO convertToVO(Course course) {
+        if (course == null) {
+            return null;
+        }
+        CourseVO vo = new CourseVO();
+        BeanUtil.copyProperties(course, vo);
+        // 获取教师名称
+        if (course.getTeacherId() != null) {
+            User teacher = userMapper.selectById(course.getTeacherId());
+            if (teacher != null) {
+                vo.setTeacherName(teacher.getName());
+            }
+        }
+        return vo;
     }
 }

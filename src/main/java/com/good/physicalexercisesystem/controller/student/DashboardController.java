@@ -6,6 +6,8 @@ import com.good.physicalexercisesystem.service.CourseService;
 import com.good.physicalexercisesystem.service.PhysicalTestService;
 import com.good.physicalexercisesystem.service.UserService;
 import com.good.physicalexercisesystem.vo.DashboardVO;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-@RestController
+@RestController("StudentDashboardController")
 @RequestMapping("/student/dashboard")
 public class DashboardController {
 
@@ -29,7 +31,13 @@ public class DashboardController {
         this.physicalTestService = physicalTestService;
     }
 
+    /**
+     * 获取学生仪表盘信息
+     * @param authentication
+     * @return
+     */
     @GetMapping("/statistics")
+    @ApiOperation(value = "获取学生仪表盘信息")
     public CommonResult<DashboardVO> getStatistics(Authentication authentication) {
         User user = userService.findByUsername(authentication.getName());
         DashboardVO vo = new DashboardVO();
@@ -47,7 +55,7 @@ public class DashboardController {
         vo.setAverageScore(Double.valueOf(testStats.getOrDefault("averageScore", 0.0).toString()));
         vo.setTotalTests(Integer.valueOf(testStats.getOrDefault("totalTests", 0).toString()));
         vo.setPassedTests(Integer.valueOf(testStats.getOrDefault("passedTests", 0).toString()));
-        
+
         // 计算通过率
         if (vo.getTotalTests() > 0) {
             vo.setPassRate(vo.getPassedTests() * 100.0 / vo.getTotalTests());
@@ -57,4 +65,4 @@ public class DashboardController {
 
         return CommonResult.success(vo);
     }
-} 
+}

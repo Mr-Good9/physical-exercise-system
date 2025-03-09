@@ -42,7 +42,7 @@ public class AuthController {
         user.setPassword(registerDTO.getPassword());
         user.setUserType(registerDTO.getUserType());
         user.setName(registerDTO.getName());
-        user.setEnabled(1);
+        user.setEnabled(true);
 
         userService.register(user);
         return CommonResult.success("注册成功", null);

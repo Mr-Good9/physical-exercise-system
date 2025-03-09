@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.good.physicalexercisesystem.mapper.CourseMapper">
+    
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, name, teacher_id, type, time, location, capacity, enrolled, description,
+        semester, start_date, end_date, status, enabled, create_time, update_time, deleted
+    </sql>
+    
+    <!-- 分页查询课程列表 -->
+    <select id="selectCourseList" resultType="com.good.physicalexercisesystem.vo.CourseVO">
+        SELECT 
+            c.*,
+            u.name as teacherName
+        FROM pe_course c
+        LEFT JOIN sys_user u ON c.teacher_id = u.id
+        <where>
+            c.deleted = 0
+            <if test="query.courseName != null and query.courseName != ''">
+                AND c.name LIKE CONCAT('%', #{query.courseName}, '%')
+            </if>
+            <if test="query.courseType != null and query.courseType != ''">
+                AND c.type = #{query.courseType}
+            </if>
+            <if test="query.status != null and query.status != ''">
+                AND c.status = #{query.status}
+            </if>
+        </where>
+        ORDER BY c.create_time DESC
+    </select>
+</mapper> 

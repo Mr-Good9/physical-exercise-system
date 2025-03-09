@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.good.physicalexercisesystem.mapper.TeacherDashboardMapper">
+    <!-- 查询近期课程 -->
+    <select id="selectRecentCourses" resultType="com.good.physicalexercisesystem.vo.CourseVO">
+        SELECT 
+            c.*,
+            u.name as teacherName,
+            (SELECT COUNT(*) FROM pe_course_attendance ca 
+             WHERE ca.course_id = c.id AND ca.deleted = 0) as attendanceCount
+        FROM pe_course c
+        LEFT JOIN sys_user u ON c.teacher_id = u.id
+        WHERE c.teacher_id = #{teacherId}
+        AND c.deleted = 0
+        AND c.status = 'active'
+        ORDER BY c.start_date ASC
+        LIMIT 5
+    </select>
+
+    <!-- 查询本周课程统计 -->
+    <select id="selectWeekCourseStats" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as totalHours,
+            SUM(CASE WHEN NOW() > end_date THEN 1 ELSE 0 END) as completedHours,
+            SUM(CASE WHEN NOW() &lt;= end_date THEN 1 ELSE 0 END) as upcomingHours
+        FROM pe_course
+        WHERE teacher_id = #{teacherId}
+        AND deleted = 0
+        AND start_date BETWEEN DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) 
+            AND DATE_ADD(CURDATE(), INTERVAL 6 - WEEKDAY(CURDATE()) DAY)
+    </select>
+
+    <!-- 查询教师待办事项 -->
+    <select id="selectTeacherTodos" resultType="com.good.physicalexercisesystem.vo.TeacherTodoVO">
+        SELECT 
+            t.*,
+            CASE t.type 
+                WHEN 'attendance' THEN c.name
+                WHEN 'evaluation' THEN c.name
+                ELSE NULL 
+            END as relatedCourseName
+        FROM pe_teacher_todo t
+        LEFT JOIN pe_course c ON t.related_id = c.id
+        WHERE t.teacher_id = #{teacherId}
+        AND t.status != 'completed'
+        AND t.deleted = 0
+        ORDER BY t.due_date ASC, t.create_time DESC
+    </select>
+</mapper> 

@@ -9,7 +9,9 @@ spring:
     url: jdbc:mysql://localhost:3306/physical_exercise?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
     password: 123456
-
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher  # 解决 Swagger 3.0 与 Spring Boot 2.6+ 不兼容的问题 
   # 文件上传配置
   servlet:
     multipart:

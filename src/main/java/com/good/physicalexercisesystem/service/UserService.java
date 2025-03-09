@@ -4,6 +4,7 @@ import com.good.physicalexercisesystem.dto.UpdatePasswordDTO;
 import com.good.physicalexercisesystem.dto.UpdateProfileDTO;
 import com.good.physicalexercisesystem.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.good.physicalexercisesystem.vo.UserProfileVo;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
@@ -59,5 +60,12 @@ public interface UserService extends IService<User> {
      * @param passwordDTO
      */
     void updatePassword(UpdatePasswordDTO passwordDTO);
+
+    /**
+     * 获取用户个人资料
+     * @param id
+     * @return
+     */
+    UserProfileVo getProfile(Long id);
 
 }

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.good.physicalexercisesystem.mapper.PeClassMapper">
+    
+    <select id="selectClassList" resultType="com.good.physicalexercisesystem.dto.ClassDTO">
+        SELECT 
+            c.id,
+            c.class_name as className,
+            c.grade,
+            c.semester,
+            c.teacher_id as teacherId,
+            u.name as teacherName,
+            (SELECT COUNT(*) FROM pe_student_class sc 
+             WHERE sc.class_id = c.id AND sc.deleted = 0 
+             AND sc.status = 'active') as studentCount
+        FROM pe_class c
+        LEFT JOIN sys_user u ON c.teacher_id = u.id
+        WHERE c.deleted = 0
+        <if test="teacherId != null">
+            AND c.teacher_id = #{teacherId}
+        </if>
+    </select>
+    
+    <select id="countStudentsByClassId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM pe_student_class
+        WHERE class_id = #{classId}
+        AND deleted = 0
+        AND status = 'active'
+    </select>
+    
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.good.physicalexercisesystem.entity.PeClass">
+        <id column="id" property="id" />
+        <result column="class_name" property="className" />
+        <result column="grade" property="grade" />
+        <result column="teacher_id" property="teacherId" />
+        <result column="semester" property="semester" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="deleted" property="deleted" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, class_name, grade, teacher_id, semester, create_time, update_time, deleted
+    </sql>
+    
+</mapper> 

@@ -5,6 +5,8 @@ import com.good.physicalexercisesystem.dto.UpdatePasswordDTO;
 import com.good.physicalexercisesystem.dto.UpdateProfileDTO;
 import com.good.physicalexercisesystem.entity.User;
 import com.good.physicalexercisesystem.service.UserService;
+import com.good.physicalexercisesystem.utils.UserContext;
+import com.good.physicalexercisesystem.vo.UserProfileVo;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -22,14 +24,12 @@ public class UserController {
 
     /**
      * 获取当前用户的个人信息
-     * @param authentication 当前登录用户的认证信息
      * @return 用户信息(不包含密码)
      */
     @GetMapping("/profile")
-    public CommonResult<User> getProfile(Authentication authentication) {
-        User user = userService.findByUsername(authentication.getName());
-        user.setPassword(null); // 不返回密码
-        return CommonResult.success(user);
+    public CommonResult<UserProfileVo> getProfile() {
+         UserProfileVo profile = userService.getProfile(UserContext.getUser().getId());
+        return CommonResult.success(profile);
     }
 
     /**
@@ -43,8 +43,7 @@ public class UserController {
             Authentication authentication,
             @Validated @RequestBody UpdateProfileDTO profileDTO
     ) {
-        User user = userService.findByUsername(authentication.getName());
-        userService.updateProfile(user.getId(), profileDTO);
+        userService.updateProfile(UserContext.getUser().getId(), profileDTO);
         return CommonResult.success("更新成功", null);
     }
 

@@ -1,6 +1,7 @@
 package com.good.physicalexercisesystem.vo;
 
 import lombok.Data;
+import java.time.LocalDate;
 
 @Data
 public class CourseVO {
@@ -14,5 +15,12 @@ public class CourseVO {
     private Integer capacity;
     private Integer enrolled;
     private String description;
-    private Boolean isEnrolled;  // 当前学生是否已选
-} 
+    private String semester;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private String status;
+    /**
+     * 是否已报名
+     */
+    private Boolean isEnrolled;
+}

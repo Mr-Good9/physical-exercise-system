@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.good.physicalexercisesystem.mapper.CourseAttendanceMapper">
+    
+    <!-- 查询课程考勤列表 -->
+    <select id="selectAttendanceList" resultType="com.good.physicalexercisesystem.vo.CourseAttendanceVO">
+        SELECT 
+            ca.*,
+            u.name as studentName,
+            u.username as studentId
+        FROM pe_course_attendance ca
+        LEFT JOIN sys_user u ON ca.student_id = u.id
+        WHERE ca.course_id = #{courseId}
+        AND ca.deleted = 0
+        ORDER BY ca.attendance_date DESC
+    </select>
+</mapper> 

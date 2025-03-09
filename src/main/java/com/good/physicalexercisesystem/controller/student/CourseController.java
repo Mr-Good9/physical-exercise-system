@@ -7,11 +7,14 @@ import com.good.physicalexercisesystem.entity.User;
 import com.good.physicalexercisesystem.service.CourseService;
 import com.good.physicalexercisesystem.service.UserService;
 import com.good.physicalexercisesystem.vo.CourseVO;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+@RestController("StudentCourseController")
 @RequestMapping("/student/course")
+@Api(tags = "学生课程接口")
 public class CourseController {
 
     private final CourseService courseService;
@@ -32,6 +35,7 @@ public class CourseController {
      * @return
      */
     @GetMapping("/list")
+    @ApiOperation(value = "获取课程列表")
     public CommonResult<Page<CourseVO>> getCourseList(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String type,
@@ -51,6 +55,7 @@ public class CourseController {
      * @param courseId
      * @return
      */
+    @ApiOperation(value = "选课")
     @PostMapping("/{courseId}/enroll")
     public CommonResult<Void> enrollCourse(
             Authentication authentication,
@@ -67,6 +72,7 @@ public class CourseController {
      * @param courseId
      * @return
      */
+    @ApiOperation(value = "退课")
     @PostMapping("/{courseId}/drop")
     public CommonResult<Void> dropCourse(
             Authentication authentication,

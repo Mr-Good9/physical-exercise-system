@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.good.physicalexercisesystem.mapper.PhysicalTestRecordMapper">
+
+    <select id="selectTestRecordList" resultType="com.good.physicalexercisesystem.dto.PhysicalTestRecordDTO">
+        SELECT
+            r.id,
+            r.student_id as studentId,
+            u.name as studentName,
+            si.class_name as className,
+            r.test_item_id as testItemId,
+            i.item_name as testItemName,
+            r.test_result as testResult,
+            r.score,
+            r.evaluation,
+            r.teacher_comment as teacherComment,
+            r.test_date as testDate,
+            r.create_time as createTime,
+            r.update_time as updateTime
+        FROM physical_test_record r
+        LEFT JOIN sys_user u ON r.student_id = u.id
+        LEFT JOIN student_info si ON u.id = si.user_id
+        LEFT JOIN physical_test_item i ON r.test_item_id = i.id
+        <where>
+            r.deleted = 0
+            <if test="query.name != null and query.name != ''">
+                AND u.name LIKE CONCAT('%', #{query.name}, '%')
+            </if>
+            <if test="query.className != null and query.className != ''">
+                AND si.class_name = #{query.className}
+            </if>
+            <if test="query.testItem != null">
+                AND r.test_item_id = #{query.testItem}
+            </if>
+        </where>
+        ORDER BY r.test_date DESC, r.create_time DESC
+    </select>
+
+</mapper>

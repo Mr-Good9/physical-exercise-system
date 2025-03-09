@@ -1,38 +1,43 @@
 package com.good.physicalexercisesystem.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.good.physicalexercisesystem.common.exception.CustomException;
 import com.good.physicalexercisesystem.dto.UpdatePasswordDTO;
-import com.good.physicalexercisesystem.entity.User;
-import com.good.physicalexercisesystem.mapper.UserMapper;
+import com.good.physicalexercisesystem.entity.*;
+import com.good.physicalexercisesystem.mapper.*;
 import com.good.physicalexercisesystem.service.UserService;
 import com.good.physicalexercisesystem.utils.JwtUtils;
 import com.good.physicalexercisesystem.utils.UserContext;
-import org.springframework.context.annotation.Lazy;
+import com.good.physicalexercisesystem.vo.UserProfileVo;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import com.good.physicalexercisesystem.dto.UpdateProfileDTO;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.File;
-import java.io.IOException;
+
 import java.util.UUID;
+
 import com.good.physicalexercisesystem.utils.MinioUtils;
 
 @Service
+@AllArgsConstructor
+@Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final MinioUtils minioUtils;
-
-    public UserServiceImpl(@Lazy PasswordEncoder passwordEncoder, JwtUtils jwtUtils, MinioUtils minioUtils) {
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtils = jwtUtils;
-        this.minioUtils = minioUtils;
-    }
+    private final StudentInfoMapper studentInfoMapper;
+    private final TeacherInfoMapper teacherInfoMapper;
+    private final PeStudentClassMapper peStudentClassMapper;
+    private final PeClassMapper peClassMapper;
 
     @Override
     public User findByUsername(String username) {
@@ -40,6 +45,37 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return getOne(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, username)
                 .eq(User::getEnabled, 1));
+    }
+
+    @Override
+    public UserProfileVo getProfile(Long id) {
+        // 查询启用状态的用户
+        User one = getOne(new LambdaQueryWrapper<User>()
+                .eq(User::getId, id)
+                .eq(User::getEnabled, 1));
+        if (one == null) {
+            throw new UsernameNotFoundException("用户不存在");
+        }
+        UserProfileVo result = BeanUtil.toBean(one, UserProfileVo.class);
+        String userType = one.getUserType();
+        if (userType.equals("student")) {
+            // 联查userInfo表填充数据
+            LambdaQueryWrapper<StudentInfo> wrapper = new LambdaQueryWrapper<StudentInfo>()
+                    .eq(StudentInfo::getUserId, one.getId());
+            StudentInfo studentInfo = studentInfoMapper.selectOne(wrapper);
+            result.setStudentId(Integer.valueOf(studentInfo.getStudentId()));
+            result.setClassName(studentInfo.getClassName());
+        } else if (userType.equals("teacher")) {
+            LambdaQueryWrapper<TeacherInfo> wrapper = new LambdaQueryWrapper<TeacherInfo>()
+                    .eq(TeacherInfo::getUserId, one.getId());
+            TeacherInfo teacherInfo = teacherInfoMapper.selectOne(wrapper);
+            result.setTeacherCode(teacherInfo.getTeacherCode());
+        } else if (userType.equals("admin")) {
+            // TODO
+
+            return result;
+        }
+        return result;
     }
 
     @Override
@@ -51,7 +87,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 密码加密存储
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setEnabled(1); // 设置为启用状态
+        user.setEnabled(true); // 设置为启用状态
 
         // 保存用户信息
         save(user);
@@ -98,21 +134,61 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
+    @Transactional
     public void updateProfile(Long userId, UpdateProfileDTO profileDTO) {
         // 获取并校验用户是否存在
         User user = getById(userId);
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
-
         // 更新基本信息
         user.setName(profileDTO.getName());
         user.setGender(profileDTO.getGender());
         user.setPhone(profileDTO.getPhone());
         user.setEmail(profileDTO.getEmail());
-
-        // 保存更新
         updateById(user);
+
+        // 更新额外信息
+        if (user.getUserType().equals("student")) {
+            // 更新班级信息
+            if (profileDTO.getClassId() != null) {
+                // 先查询是否在关系中，否则是要新增
+                PeStudentClass peStudentClass = peStudentClassMapper.selectOne(
+                        new LambdaQueryWrapper<PeStudentClass>()
+                                .eq(PeStudentClass::getStudentId, UserContext.getUser().getId())
+                );
+                if (peStudentClass == null) {
+                    peStudentClass = new PeStudentClass();
+                    peStudentClass.setStudentId(UserContext.getUser().getId());
+                    peStudentClass.setClassId(Long.valueOf(profileDTO.getClassId()));
+                    peStudentClassMapper.insert(peStudentClass);
+                } else {
+                    LambdaUpdateWrapper<PeStudentClass> updateWrapper = new LambdaUpdateWrapper<PeStudentClass>()
+                            .eq(PeStudentClass::getStudentId, UserContext.getUser().getId())
+                            .set(PeStudentClass::getClassId, profileDTO.getClassId());
+                    peStudentClassMapper.update(null, updateWrapper);
+                }
+            }
+            // 班级信息
+            PeClass peClass = peClassMapper.selectOne(
+                    new LambdaQueryWrapper<PeClass>()
+                            .eq(PeClass::getId, profileDTO.getClassId())
+            );
+            LambdaUpdateWrapper<StudentInfo> wrapper = new LambdaUpdateWrapper<StudentInfo>()
+                    .eq(StudentInfo::getUserId, user.getId())
+                    .set(profileDTO.getStudentId() != null, StudentInfo::getStudentId, profileDTO.getStudentId())
+                    .set(peClass != null, StudentInfo::getClassName, peClass.getClassName());
+            studentInfoMapper.update(null, wrapper);
+
+        } else if (user.getUserType().equals("teacher")) {
+            LambdaUpdateWrapper<TeacherInfo> wrapper = new LambdaUpdateWrapper<TeacherInfo>()
+                    .eq(TeacherInfo::getUserId, user.getId())
+                    .set(profileDTO.getTeacherCode() != null, TeacherInfo::getTeacherCode, profileDTO.getTeacherCode());
+            log.info("更新的信息: {}", profileDTO);
+            teacherInfoMapper.update(null, wrapper);
+        } else if (user.getUserType().equals("admin")) {
+            // TODO
+        }
     }
 
     @Override
@@ -158,13 +234,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 获取文件扩展名
+     *
      * @param fileName 原始文件名
      * @return 扩展名(包含.)
      */
     private String getFileExtension(String fileName) {
         return fileName != null && fileName.contains(".")
-            ? fileName.substring(fileName.lastIndexOf("."))
-            : ".jpg";
+                ? fileName.substring(fileName.lastIndexOf("."))
+                : ".jpg";
     }
 
     @Override

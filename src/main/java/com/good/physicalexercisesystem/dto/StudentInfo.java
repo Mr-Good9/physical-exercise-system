@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class StudentInfo {
     private Long id;
+    private Long userId;
     private String username;
     private String name;
     private String userType;
@@ -16,4 +17,4 @@ public class StudentInfo {
     private String className;
     private Integer attendance;
     private Double physicalScore;
-} 
+}
