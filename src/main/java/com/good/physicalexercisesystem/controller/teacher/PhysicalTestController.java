@@ -18,11 +18,22 @@ public class PhysicalTestController {
     @Autowired
     private PhysicalTestService physicalTestService;
 
+    /**
+     * 获取测试项目列表
+     * @return
+     */
     @GetMapping("/items")
     public CommonResult<List<PhysicalTestItem>> getTestItems() {
         return CommonResult.success(physicalTestService.getTestItems());
     }
 
+    /**
+     * 获取测试记录列表
+     * @param page
+     * @param pageSize
+     * @param query
+     * @return
+     */
     @GetMapping("/records")
     public CommonResult<IPage<PhysicalTestRecordDTO>> getTestRecords(
             @RequestParam(defaultValue = "1") Integer page,
@@ -31,6 +42,13 @@ public class PhysicalTestController {
         return CommonResult.success(physicalTestService.getTestRecordList(page, pageSize, query));
     }
 
+    /**
+     * 更新测试成绩
+     * @param id
+     * @param score
+     * @param evaluation
+     * @return
+     */
     @PutMapping("/records/{id}/score")
     public CommonResult<Void> updateTestScore(
             @PathVariable Long id,
@@ -40,6 +58,12 @@ public class PhysicalTestController {
         return CommonResult.success(null);
     }
 
+    /**
+     * 更新测试评价
+     * @param id
+     * @param teacherComment
+     * @return
+     */
     @PutMapping("/records/{id}/comment")
     public CommonResult<Void> updateTestComment(
             @PathVariable Long id,

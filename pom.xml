@@ -17,6 +17,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <!-- 排除 Tomcat 的 APR 依赖 -->
+                <exclusion>
+                    <groupId>org.apache.tomcat.embed</groupId>
+                    <artifactId>tomcat-embed-apr</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Swagger 3.0 依赖 -->
         <dependency>
@@ -143,7 +150,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>com.good.physicalexercisesystem.PhysicalExerciseSystemApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>

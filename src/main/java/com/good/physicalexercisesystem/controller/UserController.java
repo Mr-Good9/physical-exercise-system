@@ -1,8 +1,10 @@
 package com.good.physicalexercisesystem.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.dto.UpdatePasswordDTO;
 import com.good.physicalexercisesystem.dto.UpdateProfileDTO;
+import com.good.physicalexercisesystem.dto.UserDTO;
 import com.good.physicalexercisesystem.entity.User;
 import com.good.physicalexercisesystem.service.UserService;
 import com.good.physicalexercisesystem.utils.UserContext;
@@ -11,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
@@ -92,5 +96,65 @@ public class UserController {
         } catch (Exception e) {
             return CommonResult.error(e.getMessage());
         }
+    }
+
+    @GetMapping("/list")
+    public CommonResult<Page<UserDTO>> getUserPage(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String userType) {
+
+        Page<UserDTO> result = userService.getUserPage(page, pageSize, username, userType);
+        return CommonResult.success(result);
+    }
+
+    @GetMapping("/{id}")
+    public CommonResult<UserDTO> getUserById(@PathVariable Long id) {
+        UserDTO userDTO = userService.getUserById(id);
+        return userDTO != null ? CommonResult.success(userDTO) : CommonResult.error("用户不存在");
+    }
+
+    @PostMapping("/add")
+    public CommonResult<Boolean> addUser(@RequestBody @Validated UserDTO userDTO) {
+        try {
+            boolean success = userService.addUser(userDTO);
+            return success ? CommonResult.success(true) : CommonResult.error("添加用户失败");
+        } catch (Exception e) {
+            return CommonResult.error(e.getMessage());
+        }
+    }
+
+    @PutMapping("/update/{id}")
+    public CommonResult<Boolean> updateUser(@PathVariable Long id, @RequestBody @Validated UserDTO userDTO) {
+        try {
+            boolean success = userService.updateUser(id, userDTO);
+            return success ? CommonResult.success(true) : CommonResult.error("更新用户失败");
+        } catch (Exception e) {
+            return CommonResult.error(e.getMessage());
+        }
+    }
+
+    @PutMapping("/toggle/{id}")
+    public CommonResult<Boolean> toggleUserStatus(@PathVariable Long id) {
+        boolean success = userService.toggleUserStatus(id);
+        return success ? CommonResult.success(true) : CommonResult.error("切换用户状态失败");
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public CommonResult<Boolean> deleteUser(@PathVariable Long id) {
+        boolean success = userService.deleteUser(id);
+        return success ? CommonResult.success(true) : CommonResult.error("删除用户失败");
+    }
+
+    @PutMapping("/reset-password/{id}")
+    public CommonResult<Boolean> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> params) {
+        String newPassword = params.get("newPassword");
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            return CommonResult.error("新密码不能为空");
+        }
+
+        boolean success = userService.resetPassword(id, newPassword);
+        return success ? CommonResult.success(true) : CommonResult.error("重置密码失败");
     }
 }

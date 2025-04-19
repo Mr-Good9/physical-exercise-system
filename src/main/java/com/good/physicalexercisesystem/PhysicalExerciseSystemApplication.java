@@ -12,9 +12,4 @@ public class PhysicalExerciseSystemApplication {
     public static void main(String[] args) {
         SpringApplication.run(PhysicalExerciseSystemApplication.class, args);
     }
-
-    @GetMapping("/test")
-    public String test() {
-        return "Hello, the server is running!";
-    }
 }

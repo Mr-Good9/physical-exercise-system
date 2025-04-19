@@ -4,16 +4,17 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class TeacherTodoVO {
+public class TeacherCourseVO {
     private Long id;
-    private Long teacherId;
-    private Long courseId;
-    private String type;
-    private String title;
+    private String name;
     private String description;
+    private Long teacherId;
+    private String teacherName;
     private String status;
-    private LocalDateTime dueDate;
-    private String relatedCourseName;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
+    private String location;
+    private Integer attendanceCount;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Boolean deleted;

@@ -145,7 +145,6 @@ public class StudentServiceImpl implements StudentService {
         if (student == null) {
             throw new CustomException("学生不存在");
         }
-
         // 如果修改了学号，需要检查是否与其他学生重复
         if (!student.getUsername().equals(studentDTO.getStudentId())) {
             if (checkStudentIdExists(studentDTO.getStudentId())) {
@@ -153,7 +152,6 @@ public class StudentServiceImpl implements StudentService {
             }
             student.setUsername(studentDTO.getStudentId());
         }
-
         // 更新学生基本信息
         student.setName(studentDTO.getName());
         student.setPhone(studentDTO.getPhone());
@@ -161,7 +159,6 @@ public class StudentServiceImpl implements StudentService {
         student.setGender(studentDTO.getGender());
         student.setAvatar(studentDTO.getAvatar());
         userMapper.updateById(student);
-
         // 更新学生扩展信息
         StudentInfo studentInfo = studentInfoMapper.selectOne(
                 new LambdaQueryWrapper<StudentInfo>()
@@ -240,12 +237,10 @@ public class StudentServiceImpl implements StudentService {
                 new LambdaQueryWrapper<PhysicalTestRecord>()
                         .eq(PhysicalTestRecord::getStudentId, studentId)
         );
-
         // 获取所有测试项目
         Map<String, Long> itemMap = physicalTestItemMapper.selectList(null)
                 .stream()
                 .collect(Collectors.toMap(PhysicalTestItem::getItemName, PhysicalTestItem::getId));
-
         // 保存新记录
         List<PhysicalTestRecord> records = grades.stream().map(grade -> {
             PhysicalTestRecord record = new PhysicalTestRecord();
@@ -256,7 +251,6 @@ public class StudentServiceImpl implements StudentService {
             record.setTestDate(grade.getTestDate());
             return record;
         }).collect(Collectors.toList());
-
         // 批量插入记录
         records.forEach(record -> {
             if (record.getTestItemId() == null) {
@@ -422,8 +416,8 @@ public class StudentServiceImpl implements StudentService {
         dto.setUpdateTime(student.getUpdateTime());
 
         // 计算考勤率
-        Double attendance = attendanceRecordMapper.calculateAttendanceRate(student.getId());
-        dto.setAttendance(attendance != null ? attendance : 0.0);
+//        Double attendance = attendanceRecordMapper.calculateAttendanceRate(student.getId());
+//        dto.setAttendance(attendance != null ? attendance : 0.0);
 
         // 计算体测成绩平均分
         Double physicalScore = calculatePhysicalScore(student.getId());

@@ -15,7 +15,6 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class TeacherDashboardServiceImpl implements TeacherDashboardService {
@@ -31,51 +30,54 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
 
     @Override
     public TeacherDashboardVO getStatistics() {
-        Long teacherId = UserContext.getCurrentUserId();
-        TeacherDashboardVO vo = new TeacherDashboardVO();
-
+        // 获取当前登录教师ID
+        Long teacherId = UserContext.getUser().getId();
+        if (teacherId == null) {
+            throw new RuntimeException("未获取到当前登录教师信息");
+        }
+        TeacherDashboardVO teacherDashboardVO = new TeacherDashboardVO();
         // 获取学生统计
         TeacherDashboardVO.StudentStats studentStats = new TeacherDashboardVO.StudentStats();
-        studentStats.setTotal(countTotalStudents(teacherId));
-        studentStats.setNewCount(countNewStudents(teacherId));
-        studentStats.setActive(countActiveStudents(teacherId));
-        vo.setStudentStats(studentStats);
+        Integer totalStudents = countTotalStudents(teacherId);
+        studentStats.setTotal(totalStudents);
+        Integer newStudents = countNewStudents(teacherId);
+        studentStats.setNewCount(newStudents);
+//        Integer activeStudents = countActiveStudents(teacherId);
+//        studentStats.setActive(activeStudents);
+        teacherDashboardVO.setStudentStats(studentStats);
 
         // 获取课程统计
         TeacherDashboardVO.CourseStats courseStats = new TeacherDashboardVO.CourseStats();
-        courseStats.setTotal(countTotalCourses(teacherId));
-        courseStats.setActive(countActiveCourses(teacherId));
-        courseStats.setEnded(countEndedCourses(teacherId));
-        vo.setCourseStats(courseStats);
+        Integer totalCourses = countTotalCourses(teacherId);
+        courseStats.setTotal(totalCourses);
+        Integer activeCourses = countActiveCourses(teacherId);
+        courseStats.setActive(activeCourses);
+        Integer endedCourses = countEndedCourses(teacherId);
+        courseStats.setEnded(endedCourses);
+        teacherDashboardVO.setCourseStats(courseStats);
 
-        // 获取本周统计
-        Map<String, Object> weekStats = dashboardMapper.selectWeekCourseStats(teacherId);
-        TeacherDashboardVO.WeekStats weekStatsVO = new TeacherDashboardVO.WeekStats();
-        weekStatsVO.setHours(Integer.valueOf(weekStats.get("totalHours").toString()));
-        weekStatsVO.setCompleted(Integer.valueOf(weekStats.get("completedHours").toString()));
-        weekStatsVO.setUpcoming(Integer.valueOf(weekStats.get("upcomingHours").toString()));
-        vo.setWeekStats(weekStatsVO);
+        // 获取本周课时统计
+//        TeacherDashboardVO.WeekStats weekStats = new TeacherDashboardVO.WeekStats();
 
-        // 获取待办统计
-        TeacherDashboardVO.TodoStats todoStats = new TeacherDashboardVO.TodoStats();
-        todoStats.setTotal(countTotalTodos(teacherId));
-        todoStats.setAttendance(countAttendanceTodos(teacherId));
-        todoStats.setEvaluation(countEvaluationTodos(teacherId));
-        vo.setTodoStats(todoStats);
-
-        return vo;
-    }
-
-    @Override
-    public List<CourseVO> getRecentCourses() {
-        Long teacherId = UserContext.getCurrentUserId();
-        return dashboardMapper.selectRecentCourses(teacherId);
+        return teacherDashboardVO;
     }
 
     @Override
     public List<TeacherTodoVO> getTodos() {
-        Long teacherId = UserContext.getCurrentUserId();
+        Long teacherId = UserContext.getUser().getId();
+        if (teacherId == null) {
+            throw new RuntimeException("未获取到当前登录教师信息");
+        }
         return dashboardMapper.selectTeacherTodos(teacherId);
+    }
+
+    @Override
+    public List<CourseVO> getRecentCourses() {
+        Long teacherId = UserContext.getUser().getId();
+        if (teacherId == null) {
+            throw new RuntimeException("未获取到当前登录教师信息");
+        }
+        return dashboardMapper.selectRecentCourses(teacherId);
     }
 
     @Override
@@ -91,7 +93,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
         }
 
         // 检查是否是当前教师的待办事项
-        Long currentTeacherId = UserContext.getCurrentUserId();
+        Long currentTeacherId = UserContext.getUser().getId();
         if (!todo.getTeacherId().equals(currentTeacherId)) {
             throw new RuntimeException("无权操作此待办事项");
         }
@@ -108,7 +110,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
         }
 
         // 检查是否是当前教师的待办事项
-        Long currentTeacherId = UserContext.getCurrentUserId();
+        Long currentTeacherId = UserContext.getUser().getId();
         if (!todo.getTeacherId().equals(currentTeacherId)) {
             throw new RuntimeException("无权操作此待办事项");
         }

@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,6 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public Page<CourseVO> getCourseList(String name, String type, Page<Course> page) {
-
         // 模糊查询课程信息
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<Course>()
                 .like(name != null && !name.isEmpty(), Course::getName, name)
@@ -227,6 +227,29 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public CourseVO createCourse(CourseDTO courseDTO) {
+        // 设置默认值
+        courseDTO.setDefaultValues();
+
+        // 生成time字段
+        if (courseDTO.getWeekday() != null && courseDTO.getStartTime() != null && courseDTO.getEndTime() != null) {
+            // 转换为中国时区 (UTC+8)
+            LocalDateTime startTime = courseDTO.getStartTime().plusHours(8);
+            LocalDateTime endTime = courseDTO.getEndTime().plusHours(8);
+
+            String time = String.format("周%s %02d:%02d-%02d:%02d",
+                courseDTO.getWeekday(),
+                startTime.getHour(),
+                startTime.getMinute(),
+                endTime.getHour(),
+                endTime.getMinute());
+            courseDTO.setTime(time);
+
+            // 更新DTO中的时间为转换后的时间
+            courseDTO.setStartTime(startTime);
+            courseDTO.setEndTime(endTime);
+        } else {
+            throw new RuntimeException("课程时间信息不完整");
+        }
         Course course = new Course();
         BeanUtil.copyProperties(courseDTO, course);
         course.setTeacherId(UserContext.getUser().getId());

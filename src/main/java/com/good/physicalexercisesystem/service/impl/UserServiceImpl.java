@@ -3,9 +3,11 @@ package com.good.physicalexercisesystem.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.good.physicalexercisesystem.common.exception.CustomException;
 import com.good.physicalexercisesystem.dto.UpdatePasswordDTO;
+import com.good.physicalexercisesystem.dto.UserDTO;
 import com.good.physicalexercisesystem.entity.*;
 import com.good.physicalexercisesystem.mapper.*;
 import com.good.physicalexercisesystem.service.UserService;
@@ -14,6 +16,7 @@ import com.good.physicalexercisesystem.utils.UserContext;
 import com.good.physicalexercisesystem.vo.UserProfileVo;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -22,6 +25,9 @@ import com.good.physicalexercisesystem.dto.UpdateProfileDTO;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.good.physicalexercisesystem.utils.MinioUtils;
@@ -100,17 +106,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null) {
             throw new UsernameNotFoundException("用户不存在");
         }
-
         // 验证用户类型
         if (!user.getUserType().equals(userType)) {
             throw new BadCredentialsException("用户类型不匹配");
         }
-
         // 验证密码
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadCredentialsException("密码错误");
         }
-
         // 生成JWT令牌
         return jwtUtils.generateToken(user);
     }
@@ -260,5 +263,247 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 更新新密码
         user.setPassword(passwordEncoder.encode(passwordDTO.getNewPassword()));
         updateById(user);
+    }
+
+    @Override
+    public Page<UserDTO> getUserPage(int current, int size, String username, String userType) {
+        Page<User> page = new Page<>(current, size);
+        Page<User> userPage = baseMapper.selectUserPage(page, username, userType);
+
+        List<UserDTO> userDTOList = new ArrayList<>();
+        for (User user : userPage.getRecords()) {
+            UserDTO userDTO = convertToDTO(user);
+            userDTOList.add(userDTO);
+        }
+
+        Page<UserDTO> resultPage = new Page<>(current, size, userPage.getTotal());
+        resultPage.setRecords(userDTOList);
+
+        return resultPage;
+    }
+
+    @Override
+    public UserDTO getUserById(Long id) {
+        User user = getById(id);
+        if (user == null) {
+            return null;
+        }
+
+        return convertToDTO(user);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean addUser(UserDTO userDTO) {
+        // 检查用户名是否已存在
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUsername, userDTO.getUsername());
+        User existUser = getOne(queryWrapper);
+        if (existUser != null) {
+            throw new RuntimeException("用户名已存在");
+        }
+        // 创建用户对象
+        User user = new User();
+        BeanUtils.copyProperties(userDTO, user);
+        // 密码加密
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        // 设置时间字段
+        LocalDateTime now = LocalDateTime.now();
+        user.setCreateTime(now);
+        user.setUpdateTime(now);
+        // 设置默认值
+        user.setEnabled(true);
+        user.setDeleted(0);
+        // 保存用户基本信息
+        boolean saved = save(user);
+        if (!saved) {
+            return false;
+        }
+        // 根据用户类型保存扩展信息
+        if ("student".equals(user.getUserType())) {
+            StudentInfo studentInfo = new StudentInfo();
+            studentInfo.setUserId(user.getId());
+            studentInfo.setStudentId(userDTO.getStudentId());
+            studentInfo.setClassName(userDTO.getClassName());
+            studentInfo.setGrade(userDTO.getGrade());
+            studentInfo.setMajor(userDTO.getMajor());
+            studentInfo.setCreateTime(now);
+            studentInfo.setUpdateTime(now);
+            studentInfo.setDeleted(false);
+            studentInfoMapper.insert(studentInfo);
+        } else if ("teacher".equals(user.getUserType())) {
+            TeacherInfo teacherInfo = new TeacherInfo();
+            teacherInfo.setUserId(user.getId());
+            teacherInfo.setTeacherCode(userDTO.getTeacherCode());
+            teacherInfo.setTitle(userDTO.getTitle());
+            teacherInfo.setCreateTime(now);
+            teacherInfo.setUpdateTime(now);
+            teacherInfo.setIsDeleted(false);
+            teacherInfoMapper.insert(teacherInfo);
+        }
+        return true;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateUser(Long id, UserDTO userDTO) {
+        User user = getById(id);
+        if (user == null) {
+            return false;
+        }
+
+        // 检查用户名是否已被其他用户占用
+        if (!user.getUsername().equals(userDTO.getUsername())) {
+            LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(User::getUsername, userDTO.getUsername());
+            User existUser = getOne(queryWrapper);
+            if (existUser != null) {
+                throw new RuntimeException("用户名已存在");
+            }
+        }
+
+        // 更新基本信息
+        BeanUtils.copyProperties(userDTO, user);
+        user.setId(id); // 确保ID不变
+        user.setUpdateTime(LocalDateTime.now());
+
+        // 不更新密码
+        user.setPassword(null);
+
+        boolean updated = updateById(user);
+        if (!updated) {
+            return false;
+        }
+
+        // 更新扩展信息
+        if ("student".equals(user.getUserType())) {
+            LambdaQueryWrapper<StudentInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(StudentInfo::getUserId, id);
+            StudentInfo studentInfo = studentInfoMapper.selectOne(queryWrapper);
+
+            if (studentInfo == null) {
+                studentInfo = new StudentInfo();
+                studentInfo.setUserId(id);
+                studentInfo.setCreateTime(LocalDateTime.now());
+            }
+
+            studentInfo.setStudentId(userDTO.getStudentId());
+            studentInfo.setClassName(userDTO.getClassName());
+            studentInfo.setGrade(userDTO.getGrade());
+            studentInfo.setMajor(userDTO.getMajor());
+            studentInfo.setUpdateTime(LocalDateTime.now());
+
+            if (studentInfo.getId() == null) {
+                studentInfoMapper.insert(studentInfo);
+            } else {
+                studentInfoMapper.updateById(studentInfo);
+            }
+        } else if ("teacher".equals(user.getUserType())) {
+            LambdaQueryWrapper<TeacherInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(TeacherInfo::getUserId, id);
+            TeacherInfo teacherInfo = teacherInfoMapper.selectOne(queryWrapper);
+
+            if (teacherInfo == null) {
+                teacherInfo = new TeacherInfo();
+                teacherInfo.setUserId(id);
+                teacherInfo.setCreateTime(LocalDateTime.now());
+            }
+
+            teacherInfo.setTeacherCode(userDTO.getTeacherCode());
+            teacherInfo.setTitle(userDTO.getTitle());
+            teacherInfo.setUpdateTime(LocalDateTime.now());
+
+            if (teacherInfo.getId() == null) {
+                teacherInfoMapper.insert(teacherInfo);
+            } else {
+                teacherInfoMapper.updateById(teacherInfo);
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean toggleUserStatus(Long id) {
+        User user = getById(id);
+        if (user == null) {
+            return false;
+        }
+
+        user.setEnabled(!user.getEnabled());
+        user.setUpdateTime(LocalDateTime.now());
+
+        return updateById(user);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteUser(Long id) {
+        User user = getById(id);
+        if (user == null) {
+            return false;
+        }
+
+        // 删除用户基本信息（逻辑删除）
+        boolean removed = removeById(id);
+        if (!removed) {
+            return false;
+        }
+
+        // 根据用户类型删除扩展信息
+        if ("student".equals(user.getUserType())) {
+            LambdaQueryWrapper<StudentInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(StudentInfo::getUserId, id);
+            studentInfoMapper.delete(queryWrapper);
+        } else if ("teacher".equals(user.getUserType())) {
+            LambdaQueryWrapper<TeacherInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(TeacherInfo::getUserId, id);
+            teacherInfoMapper.delete(queryWrapper);
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean resetPassword(Long id, String newPassword) {
+        User user = getById(id);
+        if (user == null) {
+            return false;
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setUpdateTime(LocalDateTime.now());
+
+        return updateById(user);
+    }
+
+    private UserDTO convertToDTO(User user) {
+        UserDTO userDTO = new UserDTO();
+        BeanUtils.copyProperties(user, userDTO);
+
+        // 加载扩展信息
+        if ("student".equals(user.getUserType())) {
+            LambdaQueryWrapper<StudentInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(StudentInfo::getUserId, user.getId());
+            StudentInfo studentInfo = studentInfoMapper.selectOne(queryWrapper);
+
+            if (studentInfo != null) {
+                userDTO.setStudentId(studentInfo.getStudentId());
+                userDTO.setClassName(studentInfo.getClassName());
+                userDTO.setGrade(studentInfo.getGrade());
+                userDTO.setMajor(studentInfo.getMajor());
+            }
+        } else if ("teacher".equals(user.getUserType())) {
+            LambdaQueryWrapper<TeacherInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(TeacherInfo::getUserId, user.getId());
+            TeacherInfo teacherInfo = teacherInfoMapper.selectOne(queryWrapper);
+
+            if (teacherInfo != null) {
+                userDTO.setTeacherCode(teacherInfo.getTeacherCode());
+                userDTO.setTitle(teacherInfo.getTitle());
+            }
+        }
+
+        return userDTO;
     }
 }

@@ -1,7 +1,9 @@
 package com.good.physicalexercisesystem.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.good.physicalexercisesystem.dto.UpdatePasswordDTO;
 import com.good.physicalexercisesystem.dto.UpdateProfileDTO;
+import com.good.physicalexercisesystem.dto.UserDTO;
 import com.good.physicalexercisesystem.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.good.physicalexercisesystem.vo.UserProfileVo;
@@ -68,4 +70,17 @@ public interface UserService extends IService<User> {
      */
     UserProfileVo getProfile(Long id);
 
+    Page<UserDTO> getUserPage(int current, int size, String username, String userType);
+
+    UserDTO getUserById(Long id);
+
+    boolean addUser(UserDTO userDTO);
+
+    boolean updateUser(Long id, UserDTO userDTO);
+
+    boolean toggleUserStatus(Long id);
+
+    boolean deleteUser(Long id);
+
+    boolean resetPassword(Long id, String newPassword);
 }
