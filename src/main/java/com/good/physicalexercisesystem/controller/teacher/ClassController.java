@@ -1,6 +1,7 @@
 package com.good.physicalexercisesystem.controller.teacher;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.good.physicalexercisesystem.annotation.Log;
 import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.entity.PeClass;
 import com.good.physicalexercisesystem.dto.ClassDTO;
@@ -33,7 +34,13 @@ public class ClassController {
         return CommonResult.success(peClassService.getClassDetail(id));
     }
 
+    /**
+     * 添加班级
+     * @param form
+     * @return
+     */
     @PostMapping
+    @Log(value = "添加班级", level = "info")
     public CommonResult<Boolean> addClass(@RequestBody ClassForm form) {
         PeClass peClass = new PeClass();
         BeanUtils.copyProperties(form, peClass);
@@ -42,6 +49,7 @@ public class ClassController {
     }
 
     @PutMapping("/{id}")
+    @Log(value = "更新班级", level = "info")
     public CommonResult<Boolean> updateClass(@PathVariable Long id, @RequestBody ClassForm form) {
         PeClass peClass = new PeClass();
         BeanUtils.copyProperties(form, peClass);
@@ -50,6 +58,7 @@ public class ClassController {
     }
 
     @DeleteMapping("/{id}")
+    @Log(value = "删除班级", level = "info")
     public CommonResult<Boolean> deleteClass(@PathVariable Long id) {
         return CommonResult.success(peClassService.deleteClass(id));
     }

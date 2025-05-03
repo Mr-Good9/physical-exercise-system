@@ -1,6 +1,7 @@
 package com.good.physicalexercisesystem.controller.student;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.good.physicalexercisesystem.annotation.Log;
 import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.entity.Course;
 import com.good.physicalexercisesystem.entity.User;
@@ -57,6 +58,7 @@ public class CourseController {
      */
     @ApiOperation(value = "选课")
     @PostMapping("/{courseId}/enroll")
+    @Log(value = "选课", level = "info")
     public CommonResult<Void> enrollCourse(
             Authentication authentication,
             @PathVariable Long courseId
@@ -73,6 +75,7 @@ public class CourseController {
      * @return
      */
     @ApiOperation(value = "退课")
+    @Log(value = "退课", level = "info")
     @PostMapping("/{courseId}/drop")
     public CommonResult<Void> dropCourse(
             Authentication authentication,

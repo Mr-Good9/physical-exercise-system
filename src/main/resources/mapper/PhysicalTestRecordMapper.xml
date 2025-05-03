@@ -6,6 +6,7 @@
         SELECT
             r.id,
             r.student_id as studentId,
+            si.student_id as studentNo,
             u.name as studentName,
             si.class_name as className,
             r.test_item_id as testItemId,

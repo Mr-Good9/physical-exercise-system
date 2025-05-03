@@ -1,6 +1,7 @@
 package com.good.physicalexercisesystem.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.good.physicalexercisesystem.annotation.Log;
 import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.dto.UpdatePasswordDTO;
 import com.good.physicalexercisesystem.dto.UpdateProfileDTO;
@@ -43,6 +44,7 @@ public class UserController {
      * @return 更新结果
      */
     @PutMapping("/profile")
+    @Log("更新用户个人信息")
     public CommonResult<Void> updateProfile(
             Authentication authentication,
             @Validated @RequestBody UpdateProfileDTO profileDTO
@@ -57,6 +59,7 @@ public class UserController {
      * @return 修改结果
      */
     @PutMapping("/password")
+    @Log(value = "修改用户密码",level = "warning")
     public CommonResult<Void> updatePassword(
             @Validated @RequestBody UpdatePasswordDTO passwordDTO
     ) {
@@ -74,6 +77,7 @@ public class UserController {
      * @return 头像访问URL
      */
     @PostMapping("/avatar")
+    @Log("上传用户头像")
     public CommonResult<String> uploadAvatar(
             Authentication authentication,
             @RequestParam("file") MultipartFile file
@@ -116,6 +120,7 @@ public class UserController {
     }
 
     @PostMapping("/add")
+    @Log("添加用户")
     public CommonResult<Boolean> addUser(@RequestBody @Validated UserDTO userDTO) {
         try {
             boolean success = userService.addUser(userDTO);
@@ -126,6 +131,7 @@ public class UserController {
     }
 
     @PutMapping("/update/{id}")
+    @Log("更新用户")
     public CommonResult<Boolean> updateUser(@PathVariable Long id, @RequestBody @Validated UserDTO userDTO) {
         try {
             boolean success = userService.updateUser(id, userDTO);
@@ -136,18 +142,21 @@ public class UserController {
     }
 
     @PutMapping("/toggle/{id}")
+    @Log("切换用户状态")
     public CommonResult<Boolean> toggleUserStatus(@PathVariable Long id) {
         boolean success = userService.toggleUserStatus(id);
         return success ? CommonResult.success(true) : CommonResult.error("切换用户状态失败");
     }
 
     @DeleteMapping("/delete/{id}")
+    @Log(value = "删除用户",level = "warning")
     public CommonResult<Boolean> deleteUser(@PathVariable Long id) {
         boolean success = userService.deleteUser(id);
         return success ? CommonResult.success(true) : CommonResult.error("删除用户失败");
     }
 
     @PutMapping("/reset-password/{id}")
+    @Log("重置用户密码")
     public CommonResult<Boolean> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> params) {
         String newPassword = params.get("newPassword");
         if (newPassword == null || newPassword.trim().isEmpty()) {

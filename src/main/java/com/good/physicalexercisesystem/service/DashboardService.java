@@ -1,11 +1,16 @@
 package com.good.physicalexercisesystem.service;
 
-import com.good.physicalexercisesystem.vo.DashboardVO;
+import com.good.physicalexercisesystem.dto.DashboardStatisticsDTO;
+import com.good.physicalexercisesystem.entity.Notice;
+import com.good.physicalexercisesystem.entity.SysLog;
+
+import java.util.List;
 
 public interface DashboardService {
-    /**
-     * 获取学生仪表盘统计数据
-     * @return 统计数据
-     */
-    DashboardVO getStudentDashboardStatistics();
-} 
+
+    DashboardStatisticsDTO getStatistics();
+
+    List<Notice> getLatestNotices();
+
+    List<SysLog> getLatestLogs();
+}

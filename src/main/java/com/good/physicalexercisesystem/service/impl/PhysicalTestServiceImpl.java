@@ -3,6 +3,7 @@ package com.good.physicalexercisesystem.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.good.physicalexercisesystem.entity.PhysicalTestItem;
@@ -17,10 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -176,6 +174,9 @@ public class PhysicalTestServiceImpl extends ServiceImpl<PhysicalTestRecordMappe
                 .eq(PhysicalTestRecord::getStudentId, studentId)
                 .orderByDesc(PhysicalTestRecord::getTestDate).last("LIMIT 10");
         List<PhysicalTestRecord> physicalTestRecords = baseMapper.selectList(wrapper);
+        if (CollectionUtils.isEmpty(physicalTestRecords)) {
+            return Collections.emptyList();
+        }
         // 获取测试记录的项目id
          List<Long> testItemIds = physicalTestRecords.stream()
                 .map(PhysicalTestRecord::getTestItemId)

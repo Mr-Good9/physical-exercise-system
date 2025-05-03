@@ -1,5 +1,6 @@
 package com.good.physicalexercisesystem.controller;
 
+import com.good.physicalexercisesystem.annotation.Log;
 import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.dto.LoginDTO;
 import com.good.physicalexercisesystem.dto.RegisterDTO;
@@ -20,6 +21,7 @@ public class AuthController {
     private UserService userService;
 
     @PostMapping("/login")
+    @Log(value = "用户登录", level = "info")
     public CommonResult<Map<String, Object>> login(@Validated @RequestBody LoginDTO loginDTO) {
         String token = userService.login(loginDTO.getUsername(), loginDTO.getPassword(), loginDTO.getUserType());
         User user = userService.findByUsername(loginDTO.getUsername());
@@ -32,6 +34,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @Log(value = "用户注册", level = "info")
     public CommonResult<Void> register(@Validated @RequestBody RegisterDTO registerDTO) {
         // 检查用户名是否已存在
         if (userService.findByUsername(registerDTO.getUsername()) != null) {
@@ -49,6 +52,7 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
+    @Log(value = "重置密码", level = "info")
     public CommonResult<Void> resetPassword(@RequestParam String username,
                                             @RequestParam String oldPassword,
                                             @RequestParam String newPassword) {

@@ -177,6 +177,9 @@ public class CourseServiceImpl implements CourseService {
                         .orderByDesc(Course::getCreateTime)
                         .last("LIMIT 5")
         );
+        if  (courses.isEmpty()) {
+            return courses;
+        }
         // 获取教师信息
         List<Long> teacherIds = courses.stream()
                 .map(Course::getTeacherId)

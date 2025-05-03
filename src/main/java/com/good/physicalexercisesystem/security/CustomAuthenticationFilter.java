@@ -2,6 +2,7 @@ package com.good.physicalexercisesystem.security;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.good.physicalexercisesystem.annotation.Log;
 import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.dto.LoginDTO;
 import com.good.physicalexercisesystem.entity.User;
@@ -77,6 +78,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     }
 
     @Override
+    @Log("用户登录")
     protected void successfulAuthentication(HttpServletRequest request,
                                          HttpServletResponse response,
                                          FilterChain chain,

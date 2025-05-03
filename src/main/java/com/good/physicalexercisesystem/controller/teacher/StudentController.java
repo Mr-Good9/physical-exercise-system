@@ -1,6 +1,7 @@
 package com.good.physicalexercisesystem.controller.teacher;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.good.physicalexercisesystem.annotation.Log;
 import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.dto.StudentDTO;
 import com.good.physicalexercisesystem.dto.PhysicalGradeDTO;
@@ -36,6 +37,7 @@ public class StudentController {
 
     @ApiOperation("添加学生")
     @PostMapping
+    @Log("添加学生")
     public CommonResult<Void> addStudent(@Validated @RequestBody StudentDTO studentDTO) {
         studentService.addStudent(studentDTO);
         return CommonResult.success(null);
@@ -43,6 +45,7 @@ public class StudentController {
 
     @ApiOperation("更新学生信息")
     @PutMapping("/{id}")
+    @Log("更新学生信息")
     public CommonResult<Void> updateStudent(
             @PathVariable Long id,
             @Validated @RequestBody StudentDTO studentDTO) {
@@ -52,6 +55,7 @@ public class StudentController {
 
     @ApiOperation("删除学生")
     @DeleteMapping("/{id}")
+    @Log(value = "删除学生",level = "warning")
     public CommonResult<Void> deleteStudent(@PathVariable Long id) {
         studentService.deleteStudent(id);
         return CommonResult.success(null);
@@ -59,6 +63,7 @@ public class StudentController {
 
     @ApiOperation("导入学生")
     @PostMapping("/import")
+    @Log("导入学生")
     public CommonResult<Void> importStudents(@RequestParam("file") MultipartFile file) {
         studentService.importStudents(file);
         return CommonResult.success(null);
@@ -71,6 +76,7 @@ public class StudentController {
     }
 
     @ApiOperation("保存学生体测成绩")
+    @Log("保存学生体测成绩")
     @PostMapping("/{studentId}/physical-grades")
     public CommonResult<Void> savePhysicalGrades(
             @PathVariable Long studentId,
@@ -87,7 +93,7 @@ public class StudentController {
 
     @ApiOperation("保存学生考勤记录")
     @PostMapping("/{studentId}/attendance")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @Log("保存学生考勤记录")
     public CommonResult<Void> saveAttendanceRecords(
             @PathVariable Long studentId,
             @Validated @RequestBody List<AttendanceRecord> records) {

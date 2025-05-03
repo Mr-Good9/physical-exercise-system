@@ -165,3 +165,21 @@ CREATE TABLE `pe_class` (
   KEY `fk_class_teacher` (`teacher_id`),
   CONSTRAINT `fk_class_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `sys_user` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='班级信息表';
+
+
+CREATE TABLE `sys_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `type` varchar(50) NOT NULL COMMENT '日志类型: operation-操作日志, login-登录日志, system-系统日志',
+  `level` varchar(50) NOT NULL COMMENT '日志级别: info-信息, warning-警告, error-错误',
+  `content` varchar(500) NOT NULL COMMENT '日志内容',
+  `operator` varchar(100) DEFAULT NULL COMMENT '操作人',
+  `browser` varchar(200) DEFAULT NULL COMMENT '浏览器信息',
+  `params` text COMMENT '请求参数',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint(1) DEFAULT '0' COMMENT '是否删除:1-已删除,0-未删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_type` (`type`),
+  KEY `idx_level` (`level`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统日志表';

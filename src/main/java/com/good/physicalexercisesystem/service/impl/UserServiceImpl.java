@@ -69,16 +69,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             LambdaQueryWrapper<StudentInfo> wrapper = new LambdaQueryWrapper<StudentInfo>()
                     .eq(StudentInfo::getUserId, one.getId());
             StudentInfo studentInfo = studentInfoMapper.selectOne(wrapper);
-            result.setStudentId(Integer.valueOf(studentInfo.getStudentId()));
-            result.setClassName(studentInfo.getClassName());
+            // 判空
+            if (studentInfo != null) {
+                result.setStudentId(Integer.valueOf(studentInfo.getStudentId()));
+                result.setClassName(studentInfo.getClassName());
+            }
         } else if (userType.equals("teacher")) {
             LambdaQueryWrapper<TeacherInfo> wrapper = new LambdaQueryWrapper<TeacherInfo>()
                     .eq(TeacherInfo::getUserId, one.getId());
             TeacherInfo teacherInfo = teacherInfoMapper.selectOne(wrapper);
-            result.setTeacherCode(teacherInfo.getTeacherCode());
+            if (teacherInfo != null) {
+                result.setTeacherCode(teacherInfo.getTeacherCode());
+            }
         } else if (userType.equals("admin")) {
             // TODO
-
             return result;
         }
         return result;
@@ -171,17 +175,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                             .set(PeStudentClass::getClassId, profileDTO.getClassId());
                     peStudentClassMapper.update(null, updateWrapper);
                 }
+                // 班级信息
+                PeClass peClass = peClassMapper.selectOne(
+                        new LambdaQueryWrapper<PeClass>()
+                                .eq(PeClass::getId, profileDTO.getClassId())
+                );
+                LambdaUpdateWrapper<StudentInfo> wrapper = new LambdaUpdateWrapper<StudentInfo>()
+                        .eq(StudentInfo::getUserId, user.getId())
+                        .set(profileDTO.getStudentId() != null, StudentInfo::getStudentId, profileDTO.getStudentId())
+                        .set(peClass != null, StudentInfo::getClassName, peClass.getClassName());
+                studentInfoMapper.update(null, wrapper);
             }
-            // 班级信息
-            PeClass peClass = peClassMapper.selectOne(
-                    new LambdaQueryWrapper<PeClass>()
-                            .eq(PeClass::getId, profileDTO.getClassId())
-            );
-            LambdaUpdateWrapper<StudentInfo> wrapper = new LambdaUpdateWrapper<StudentInfo>()
-                    .eq(StudentInfo::getUserId, user.getId())
-                    .set(profileDTO.getStudentId() != null, StudentInfo::getStudentId, profileDTO.getStudentId())
-                    .set(peClass != null, StudentInfo::getClassName, peClass.getClassName());
-            studentInfoMapper.update(null, wrapper);
 
         } else if (user.getUserType().equals("teacher")) {
             LambdaUpdateWrapper<TeacherInfo> wrapper = new LambdaUpdateWrapper<TeacherInfo>()

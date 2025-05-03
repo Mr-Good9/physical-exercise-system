@@ -1,127 +1,109 @@
 package com.good.physicalexercisesystem.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.good.physicalexercisesystem.entity.Course;
-import com.good.physicalexercisesystem.entity.CourseEnrollment;
-import com.good.physicalexercisesystem.entity.PhysicalTestItem;
-import com.good.physicalexercisesystem.entity.PhysicalTestRecord;
-import com.good.physicalexercisesystem.mapper.CourseEnrollmentMapper;
-import com.good.physicalexercisesystem.mapper.CourseMapper;
-import com.good.physicalexercisesystem.mapper.PhysicalTestItemMapper;
-import com.good.physicalexercisesystem.mapper.PhysicalTestRecordMapper;
+import com.good.physicalexercisesystem.dto.DashboardStatisticsDTO;
+import com.good.physicalexercisesystem.entity.Notice;
+import com.good.physicalexercisesystem.entity.SysLog;
+import com.good.physicalexercisesystem.entity.User;
+import com.good.physicalexercisesystem.mapper.NoticeMapper;
+import com.good.physicalexercisesystem.mapper.SysLogMapper;
+import com.good.physicalexercisesystem.mapper.UserMapper;
 import com.good.physicalexercisesystem.service.DashboardService;
-import com.good.physicalexercisesystem.utils.UserContext;
-import com.good.physicalexercisesystem.vo.DashboardVO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 @Service
+@RequiredArgsConstructor
 public class DashboardServiceImpl implements DashboardService {
 
-    private final CourseMapper courseMapper;
-    private final CourseEnrollmentMapper enrollmentMapper;
-    private final PhysicalTestRecordMapper testRecordMapper;
-    private final PhysicalTestItemMapper testItemMapper;
+    private final UserMapper userMapper;
+    private final NoticeMapper noticeMapper;
+    private final SysLogMapper logMapper;
 
+    private final LocalDateTime serverStartTime = LocalDateTime.now();
 
-    public DashboardServiceImpl(CourseMapper courseMapper,
-                                CourseEnrollmentMapper enrollmentMapper,
-                                PhysicalTestRecordMapper testRecordMapper, PhysicalTestItemMapper testItemMapper) {
-        this.courseMapper = courseMapper;
-        this.enrollmentMapper = enrollmentMapper;
-        this.testRecordMapper = testRecordMapper;
-        this.testItemMapper = testItemMapper;
+    @Override
+    public DashboardStatisticsDTO getStatistics() {
+        DashboardStatisticsDTO statistics = new DashboardStatisticsDTO();
+
+        // 总用户数
+        LambdaQueryWrapper<User> userQuery = new LambdaQueryWrapper<>();
+        userQuery.eq(User::getDeleted, false);
+        int totalUsers = Math.toIntExact(userMapper.selectCount(userQuery));
+        statistics.setTotalUsers(totalUsers);
+
+        // 教师人数
+        LambdaQueryWrapper<User> teacherQuery = new LambdaQueryWrapper<>();
+        teacherQuery.eq(User::getUserType, "teacher").eq(User::getDeleted, false);
+        int teacherCount = Math.toIntExact(userMapper.selectCount(teacherQuery));
+        statistics.setTeacherCount(teacherCount);
+
+        // 学生人数
+        LambdaQueryWrapper<User> studentQuery = new LambdaQueryWrapper<>();
+        studentQuery.eq(User::getUserType, "student").eq(User::getDeleted, false);
+        int studentCount = Math.toIntExact(userMapper.selectCount(studentQuery));
+        statistics.setStudentCount(studentCount);
+
+        // 今日活跃（从日志表计算）
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        LambdaQueryWrapper<SysLog> todayLogQuery = new LambdaQueryWrapper<>();
+        todayLogQuery.ge(SysLog::getCreateTime, todayStart).eq(SysLog::getDeleted, false);
+        int todayLogCount = Math.toIntExact(logMapper.selectCount(todayLogQuery));
+        statistics.setActiveToday(todayLogCount);
+
+        // 昨日活跃
+        LocalDateTime yesterdayStart = LocalDate.now().minusDays(1).atStartOfDay();
+        LocalDateTime yesterdayEnd = LocalDate.now().atStartOfDay();
+        LambdaQueryWrapper<SysLog> yesterdayLogQuery = new LambdaQueryWrapper<>();
+        yesterdayLogQuery.ge(SysLog::getCreateTime, yesterdayStart)
+                         .lt(SysLog::getCreateTime, yesterdayEnd)
+                         .eq(SysLog::getDeleted, false);
+        int yesterdayLogCount = Math.toIntExact(logMapper.selectCount(yesterdayLogQuery));
+
+        // 计算增长百分比
+        double growthRate = 0.0;
+        if (yesterdayLogCount > 0) {
+            growthRate = (double) (todayLogCount - yesterdayLogCount) / yesterdayLogCount * 100;
+        }
+        statistics.setActiveGrowth(Math.round(growthRate * 10) / 10.0);
+
+        // 通知数量
+        LambdaQueryWrapper<Notice> noticeQuery = new LambdaQueryWrapper<>();
+        noticeQuery.eq(Notice::getDeleted, false).eq(Notice::getEnabled, true);
+        int noticeCount = Math.toIntExact(noticeMapper.selectCount(noticeQuery));
+        statistics.setNoticeCount(noticeCount);
+
+        // 未读通知（假设为最近3条）
+        statistics.setUnreadNotice(Math.min(3, noticeCount));
+
+        // 系统运行时间
+        Duration uptime = Duration.between(serverStartTime, LocalDateTime.now());
+        long days = uptime.toDays();
+        long hours = uptime.toHours() % 24;
+        statistics.setUptime(days + "天" + hours + "小时");
+
+        return statistics;
     }
 
     @Override
-    public DashboardVO getStudentDashboardStatistics() {
-        DashboardVO vo = new DashboardVO();
-        Long studentId = UserContext.getUser().getId();
+    public List<Notice> getLatestNotices() {
+        LambdaQueryWrapper<Notice> query = new LambdaQueryWrapper<>();
+        query.eq(Notice::getDeleted, false)
+             .eq(Notice::getEnabled, true)
+             .orderByDesc(Notice::getCreateTime)
+             .last("LIMIT 4");
+        return noticeMapper.selectList(query);
+    }
 
-        // 获取课程统计
-        List<CourseEnrollment> enrollments = enrollmentMapper.selectList(
-                new LambdaQueryWrapper<CourseEnrollment>()
-                        .eq(CourseEnrollment::getStudentId, studentId)
-                        .eq(CourseEnrollment::getStatus, "enrolled")
-        );
-
-        // 如果有选课记录才查询课程信息
-        if (!enrollments.isEmpty()) {
-            List<Long> courseIds = enrollments.stream()
-                    .map(CourseEnrollment::getCourseId)
-                    .collect(Collectors.toList());
-
-            List<Course> courses = courseMapper.selectList(
-                    new LambdaQueryWrapper<Course>()
-                            .in(Course::getId, courseIds)
-            );
-
-            vo.setTotalCourses(courses.size());
-            vo.setRequiredCourses((int) courses.stream()
-                    .filter(c -> "required".equals(c.getType()))
-                    .count());
-            vo.setOptionalCourses((int) courses.stream()
-                    .filter(c -> "optional".equals(c.getType()))
-                    .count());
-        } else {
-            vo.setTotalCourses(0);
-            vo.setRequiredCourses(0);
-            vo.setOptionalCourses(0);
-        }
-
-        // 获取体测统计
-        List<PhysicalTestRecord> records = testRecordMapper.selectList(
-                new LambdaQueryWrapper<PhysicalTestRecord>()
-                        .eq(PhysicalTestRecord::getStudentId, studentId)
-                        .orderByDesc(PhysicalTestRecord::getTestDate)
-        );
-
-        if (!records.isEmpty()) {
-            PhysicalTestRecord latest = records.get(0);
-            vo.setLatestScore(Double.valueOf(latest.getScore()));
-
-            // 获取最新测试项目名称
-            PhysicalTestItem testItem = testItemMapper.selectById(latest.getTestItemId());
-            if (testItem != null) {
-                vo.setLatestTestType(testItem.getItemName());
-            }
-
-            // 计算平均分和通过率
-            double totalScore = records.stream()
-                    .mapToDouble(PhysicalTestRecord::getScore)
-                    .sum();
-            vo.setAverageScore(totalScore / records.size());
-            vo.setTotalTests(records.size());
-
-            long passedCount = records.stream()
-                    .filter(r -> r.getScore() >= 60)
-                    .count();
-            vo.setPassedTests((int) passedCount);
-            vo.setPassRate(passedCount * 100.0 / records.size());
-
-            // 计算趋势
-            if (records.size() > 1) {
-                double previousScore = records.get(1).getScore();
-                vo.setMonthOverMonth((latest.getScore() - previousScore) / previousScore * 100);
-
-                if (records.size() > 2) {
-                    double lastYearScore = records.get(2).getScore();
-                    vo.setYearOverYear((latest.getScore() - lastYearScore) / lastYearScore * 100);
-                }
-            }
-        } else {
-            // 设置默认值
-            vo.setLatestScore(0.0);
-            vo.setLatestTestType("");
-            vo.setAverageScore(0.0);
-            vo.setTotalTests(0);
-            vo.setPassedTests(0);
-            vo.setPassRate(0.0);
-            vo.setMonthOverMonth(0.0);
-            vo.setYearOverYear(0.0);
-        }
-        return vo;
+    @Override
+    public List<SysLog> getLatestLogs() {
+        return logMapper.getLatestLogs();
     }
 }

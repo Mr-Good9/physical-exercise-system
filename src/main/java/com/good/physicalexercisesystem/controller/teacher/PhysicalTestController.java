@@ -1,11 +1,13 @@
 package com.good.physicalexercisesystem.controller.teacher;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.good.physicalexercisesystem.annotation.Log;
 import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.entity.PhysicalTestItem;
 import com.good.physicalexercisesystem.dto.PhysicalTestRecordDTO;
 import com.good.physicalexercisesystem.dto.PhysicalTestQuery;
 import com.good.physicalexercisesystem.service.PhysicalTestService;
+import org.apache.ibatis.ognl.Ognl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,6 +52,7 @@ public class PhysicalTestController {
      * @return
      */
     @PutMapping("/records/{id}/score")
+    @Log("更新测试成绩")
     public CommonResult<Void> updateTestScore(
             @PathVariable Long id,
             @RequestParam Integer score,
@@ -65,6 +68,7 @@ public class PhysicalTestController {
      * @return
      */
     @PutMapping("/records/{id}/comment")
+    @Log("更新测试评价")
     public CommonResult<Void> updateTestComment(
             @PathVariable Long id,
             @RequestParam String teacherComment) {

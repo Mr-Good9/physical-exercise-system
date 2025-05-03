@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class PhysicalTestRecordDTO {
     private Long id;
     private Long studentId;
+    private String studentNo;
     private String studentName;
     private String className;
     private Long testItemId;
@@ -18,4 +19,4 @@ public class PhysicalTestRecordDTO {
     private LocalDateTime testDate;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
-} 
+}

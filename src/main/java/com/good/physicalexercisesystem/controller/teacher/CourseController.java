@@ -2,6 +2,7 @@ package com.good.physicalexercisesystem.controller.teacher;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.good.physicalexercisesystem.annotation.Log;
 import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.dto.CourseAttendanceDTO;
 import com.good.physicalexercisesystem.dto.CourseDTO;
@@ -34,18 +35,21 @@ public class CourseController {
 
     @PostMapping
     @ApiOperation("创建课程")
+    @Log("创建课程")
     public CommonResult<CourseVO> createCourse(@RequestBody @Valid CourseDTO courseDTO) {
         return CommonResult.success(courseService.createCourse(courseDTO));
     }
 
     @PutMapping("/{id}")
     @ApiOperation("更新课程")
+    @Log("更新课程")
     public CommonResult<CourseVO> updateCourse(@PathVariable Long id, @RequestBody @Valid CourseDTO courseDTO) {
         return CommonResult.success(courseService.updateCourse(id, courseDTO));
     }
 
     @DeleteMapping("/{id}")
     @ApiOperation("删除课程")
+    @Log(value = "删除课程",level = "warning")
     public CommonResult<Void> deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
         return CommonResult.success(null);
@@ -59,6 +63,7 @@ public class CourseController {
 
     @PostMapping("/{id}/attendance")
     @ApiOperation("保存课程考勤记录")
+    @Log("保存课程考勤记录")
     public CommonResult<Void> saveCourseAttendance(
             @PathVariable Long id,
             @RequestBody @Valid List<CourseAttendanceDTO> attendanceList) {
@@ -74,6 +79,7 @@ public class CourseController {
 
     @PostMapping("/{id}/scores")
     @ApiOperation("保存课程成绩记录")
+    @Log("保存课程成绩记录")
     public CommonResult<Void> saveCourseScores(
             @PathVariable Long id,
             @RequestBody @Valid List<CourseScoreDTO> scoreList) {

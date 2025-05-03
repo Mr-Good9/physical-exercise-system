@@ -1,5 +1,6 @@
 package com.good.physicalexercisesystem.controller.teacher;
 
+import com.good.physicalexercisesystem.annotation.Log;
 import com.good.physicalexercisesystem.common.CommonResult;
 import com.good.physicalexercisesystem.service.TeacherDashboardService;
 import com.good.physicalexercisesystem.vo.CourseVO;
@@ -40,6 +41,7 @@ public class DashboardController {
 
     @PutMapping("/todos/{id}/status")
     @ApiOperation("更新待办事项状态")
+    @Log("更新待办事项状态")
     public CommonResult<Void> updateTodoStatus(
             @PathVariable Long id,
             @RequestParam String status) {
@@ -49,6 +51,7 @@ public class DashboardController {
 
     @DeleteMapping("/todos/{id}")
     @ApiOperation("删除待办事项")
+    @Log(value = "删除待办事项",level = "warning")
     public CommonResult<Void> deleteTodo(@PathVariable Long id) {
         dashboardService.deleteTodo(id);
         return CommonResult.success(null);
