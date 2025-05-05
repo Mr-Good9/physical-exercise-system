@@ -49,4 +49,10 @@ public interface PhysicalTestService extends IService<PhysicalTestRecord> {
     boolean updateTestComment(Long id, String teacherComment);
 
     Page<PhysicalTestRecordVO> getStudentTestRecords (Long studentId,String itemCode, Page<PhysicalTestRecord> page);
+
+    /**
+     * 添加体测记录
+     * @param recordDTO 体测记录数据
+     */
+    void addTestRecord(PhysicalTestRecordDTO recordDTO);
 }

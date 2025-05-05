@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.good.physicalexercisesystem.common.exception.CustomException;
+import com.good.physicalexercisesystem.dto.StudentDTO;
 import com.good.physicalexercisesystem.dto.UpdatePasswordDTO;
 import com.good.physicalexercisesystem.dto.UserDTO;
 import com.good.physicalexercisesystem.entity.*;
@@ -44,6 +45,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final TeacherInfoMapper teacherInfoMapper;
     private final PeStudentClassMapper peStudentClassMapper;
     private final PeClassMapper peClassMapper;
+    private final UserMapper userMapper;
 
     @Override
     public User findByUsername(String username) {
@@ -509,5 +511,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         return userDTO;
+    }
+
+    @Override
+    public List<StudentDTO> searchStudentsByKeyword(String keyword) {
+        // 根据关键词查询用户
+        List<User> users = userMapper.selectUsersByKeyword(keyword);
+
+        List<StudentDTO> result = new ArrayList<>();
+        for (User user : users) {
+            if ("student".equals(user.getUserType())) {
+                StudentDTO dto = new StudentDTO();
+                BeanUtils.copyProperties(user, dto);
+
+                // 查询学生信息
+                LambdaQueryWrapper<StudentInfo> wrapper = new LambdaQueryWrapper<>();
+                wrapper.eq(StudentInfo::getUserId, user.getId())
+                        .eq(StudentInfo::getDeleted, false);
+                StudentInfo studentInfo = studentInfoMapper.selectOne(wrapper);
+                if (studentInfo != null) {
+                    dto.setStudentId(studentInfo.getStudentId());
+                    dto.setClassName(studentInfo.getClassName());
+                    dto.setGrade(studentInfo.getGrade());
+                    dto.setMajor(studentInfo.getMajor());
+                }
+                result.add(dto);
+            }
+        }
+
+        return result;
     }
 }

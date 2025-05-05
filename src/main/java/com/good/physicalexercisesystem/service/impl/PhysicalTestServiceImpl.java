@@ -6,18 +6,22 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.good.physicalexercisesystem.common.exception.CustomException;
 import com.good.physicalexercisesystem.entity.PhysicalTestItem;
 import com.good.physicalexercisesystem.entity.PhysicalTestRecord;
 import com.good.physicalexercisesystem.dto.PhysicalTestRecordDTO;
 import com.good.physicalexercisesystem.dto.PhysicalTestQuery;
+import com.good.physicalexercisesystem.entity.User;
 import com.good.physicalexercisesystem.mapper.PhysicalTestItemMapper;
 import com.good.physicalexercisesystem.mapper.PhysicalTestRecordMapper;
+import com.good.physicalexercisesystem.mapper.UserMapper;
 import com.good.physicalexercisesystem.service.PhysicalTestService;
 import com.good.physicalexercisesystem.vo.PhysicalTestRecordVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,6 +30,10 @@ public class PhysicalTestServiceImpl extends ServiceImpl<PhysicalTestRecordMappe
 
     @Autowired
     private PhysicalTestItemMapper testItemMapper;
+    @Autowired
+    private UserMapper userMapper;
+    @Autowired
+    private PhysicalTestRecordMapper physicalTestRecordMapper;
 
     @Override
     public IPage<PhysicalTestRecordDTO> getTestRecordList(Integer page, Integer pageSize, PhysicalTestQuery query) {
@@ -194,5 +202,47 @@ public class PhysicalTestServiceImpl extends ServiceImpl<PhysicalTestRecordMappe
             record.setUnit(physicalTestRecord.getUnit());
         }
         return testRecordVO;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addTestRecord(PhysicalTestRecordDTO recordDTO) {
+        // 验证学生是否存在
+        User student = userMapper.selectById(recordDTO.getStudentId());
+        if (student == null || student.getDeleted() == 1) {
+            throw new CustomException("学生不存在");
+        }
+
+        // 验证测试项目是否存在
+        PhysicalTestItem testItem = testItemMapper.selectById(recordDTO.getTestItemId());
+        if (testItem == null || testItem.getDeleted() == 1 || testItem.getEnabled() == 0) {
+            throw new CustomException("测试项目不存在或已禁用");
+        }
+
+        // 创建记录实体
+        PhysicalTestRecord record = new PhysicalTestRecord();
+        record.setStudentId(recordDTO.getStudentId());
+        record.setTestItemId(recordDTO.getTestItemId());
+        record.setTestResult(recordDTO.getTestResult());
+        record.setScore(recordDTO.getScore());
+        record.setEvaluation(recordDTO.getEvaluation());
+        record.setTeacherComment(recordDTO.getTeacherComment());
+        
+        // 处理日期转换
+        LocalDateTime testDateTime = null;
+        if (recordDTO.getTestDate() != null) {
+            // 如果前端传来的是LocalDate类型，转换为当天0点的LocalDateTime
+            testDateTime = recordDTO.getTestDate().atStartOfDay();
+        } else {
+            testDateTime = LocalDateTime.now();
+        }
+        record.setTestDate(testDateTime);
+        
+        record.setCreateTime(LocalDateTime.now());
+        record.setUpdateTime(LocalDateTime.now());
+        record.setDeleted(0);
+
+        // 插入记录
+        physicalTestRecordMapper.insert(record);
     }
 }

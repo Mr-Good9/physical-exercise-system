@@ -3,6 +3,7 @@ package com.good.physicalexercisesystem.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.good.physicalexercisesystem.annotation.Log;
 import com.good.physicalexercisesystem.common.CommonResult;
+import com.good.physicalexercisesystem.dto.StudentDTO;
 import com.good.physicalexercisesystem.dto.UpdatePasswordDTO;
 import com.good.physicalexercisesystem.dto.UpdateProfileDTO;
 import com.good.physicalexercisesystem.dto.UserDTO;
@@ -15,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -165,5 +167,16 @@ public class UserController {
 
         boolean success = userService.resetPassword(id, newPassword);
         return success ? CommonResult.success(true) : CommonResult.error("重置密码失败");
+    }
+
+    /**
+     * 根据关键词搜索学生
+     * @param keyword 搜索关键词(姓名或学号)
+     * @return 学生列表
+     */
+    @GetMapping("/search")
+    public CommonResult<List<StudentDTO>> searchStudents(@RequestParam String keyword) {
+        List<StudentDTO> students = userService.searchStudentsByKeyword(keyword);
+        return CommonResult.success(students);
     }
 }

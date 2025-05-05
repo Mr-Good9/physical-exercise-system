@@ -7,9 +7,9 @@ import com.good.physicalexercisesystem.entity.PhysicalTestItem;
 import com.good.physicalexercisesystem.dto.PhysicalTestRecordDTO;
 import com.good.physicalexercisesystem.dto.PhysicalTestQuery;
 import com.good.physicalexercisesystem.service.PhysicalTestService;
-import org.apache.ibatis.ognl.Ognl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
@@ -38,8 +38,8 @@ public class PhysicalTestController {
      */
     @GetMapping("/records")
     public CommonResult<IPage<PhysicalTestRecordDTO>> getTestRecords(
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "1", name = "page") Integer page,
+            @RequestParam(defaultValue = "10", name = "pageSize") Integer pageSize,
             PhysicalTestQuery query) {
         return CommonResult.success(physicalTestService.getTestRecordList(page, pageSize, query));
     }
@@ -75,4 +75,29 @@ public class PhysicalTestController {
         physicalTestService.updateTestComment(id, teacherComment);
         return CommonResult.success(null);
     }
+
+    @PostMapping("/records")
+    @Log("新增测试记录")
+    public CommonResult<Void> addTestRecord(@RequestBody @Validated PhysicalTestRecordDTO recordDTO) {
+        // 获取当前登录用户
+//        Long teacherId = UserContext.getCurrentUserId();
+        // 根据分数自动生成评价
+        if (recordDTO.getScore() != null && (recordDTO.getEvaluation() == null || recordDTO.getEvaluation().isEmpty())) {
+            recordDTO.setEvaluation(generateEvaluation(recordDTO.getScore()));
+        }
+        // 保存记录
+        physicalTestService.addTestRecord(recordDTO);
+        return CommonResult.success(null);
+    }
+
+    /**
+     * 根据分数生成评价等级
+     */
+    private String generateEvaluation(Integer score) {
+        if (score >= 90) return "优秀";
+        if (score >= 80) return "良好";
+        if (score >= 60) return "及格";
+        return "不及格";
+    }
+
 }

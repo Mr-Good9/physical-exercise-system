@@ -1,6 +1,7 @@
 package com.good.physicalexercisesystem.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.good.physicalexercisesystem.dto.StudentDTO;
 import com.good.physicalexercisesystem.dto.UpdatePasswordDTO;
 import com.good.physicalexercisesystem.dto.UpdateProfileDTO;
 import com.good.physicalexercisesystem.dto.UserDTO;
@@ -10,6 +11,7 @@ import com.good.physicalexercisesystem.vo.UserProfileVo;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
+import java.util.List;
 
 public interface UserService extends IService<User> {
     /**
@@ -83,4 +85,6 @@ public interface UserService extends IService<User> {
     boolean deleteUser(Long id);
 
     boolean resetPassword(Long id, String newPassword);
+
+    List<StudentDTO> searchStudentsByKeyword(String keyword);
 }

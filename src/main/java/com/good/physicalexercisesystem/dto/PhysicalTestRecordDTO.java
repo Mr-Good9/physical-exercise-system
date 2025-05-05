@@ -1,6 +1,7 @@
 package com.good.physicalexercisesystem.dto;
 
 import lombok.Data;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -16,7 +17,7 @@ public class PhysicalTestRecordDTO {
     private Integer score;
     private String evaluation;
     private String teacherComment;
-    private LocalDateTime testDate;
+    private LocalDate testDate;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }
