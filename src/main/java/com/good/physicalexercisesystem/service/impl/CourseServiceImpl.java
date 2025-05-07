@@ -41,8 +41,17 @@ public class CourseServiceImpl implements CourseService {
     @Autowired
     private CourseScoreMapper scoreMapper;
 
+    /**
+     * 获取课程列表 - 分页模糊查询
+     * 1. mybatis-plus的Lambda表达式来构造sql语句
+     * 2. 使用Page对象进行分页查询
+     * 3. 查询课程相关的教师信息
+     * 4. 查询当前学生已经选择的课程来筛选选课状态
+     * 5. 根据上面获取到的数据来构造返回结果
+     */
     @Override
     public Page<CourseVO> getCourseList(String name, String type, Page<Course> page) {
+
         // 模糊查询课程信息
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<Course>()
                 .like(name != null && !name.isEmpty(), Course::getName, name)
@@ -113,12 +122,10 @@ public class CourseServiceImpl implements CourseService {
         if (course == null || !course.getEnabled()) {
             throw new RuntimeException("课程不存在或已关闭");
         }
-
         // 检查是否已满
         if (course.getEnrolled() >= course.getCapacity()) {
             throw new RuntimeException("课程已满");
         }
-
         // 检查是否已选
         Long count = enrollmentMapper.selectCount(
                 new LambdaQueryWrapper<CourseEnrollment>()
@@ -169,6 +176,9 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public List<Course> getRecentCourses(Long studentId) {
         // 还要联查到teacherName
+        /**
+         * 根据学生ID查询学生已选课程，降序排序取前五条记录
+         */
         List<Course> courses = courseMapper.selectList(
                 new LambdaQueryWrapper<Course>()
                         .inSql(Course::getId,
@@ -180,11 +190,10 @@ public class CourseServiceImpl implements CourseService {
         if  (courses.isEmpty()) {
             return courses;
         }
-        // 获取教师信息
+        // 获取教师信息 - （在前端中要展示课程对应的教师信息，所以先查出来再设置到对应的返回结果中course）
         List<Long> teacherIds = courses.stream()
                 .map(Course::getTeacherId)
                 .collect(Collectors.toList());
-
         Map<Long, String> teacherNames = userMapper.selectList(
                 new LambdaQueryWrapper<User>()
                         .in(User::getId, teacherIds)
@@ -195,14 +204,18 @@ public class CourseServiceImpl implements CourseService {
         for (Course course : courses) {
             course.setTeacherName(teacherNames.get(course.getTeacherId()));
         }
+
         return courses;
     }
 
+    /**
+     * 获取学生课程统计信息
+     */
     @Override
     public Map<String, Integer> getStudentCourseStatistics(Long studentId) {
         Map<String, Integer> statistics = new HashMap<>();
 
-        // 获取学生已选课程
+        // 获取学生已选课程信息
         List<Course> courses = courseMapper.selectList(
                 new LambdaQueryWrapper<Course>()
                         .inSql(Course::getId,
@@ -212,6 +225,7 @@ public class CourseServiceImpl implements CourseService {
 
         // 统计课程数量
         statistics.put("total", courses.size());
+
         statistics.put("required", (int) courses.stream()
                 .filter(c -> "required".equals(c.getType()))
                 .count());
@@ -228,6 +242,14 @@ public class CourseServiceImpl implements CourseService {
         return courseMapper.selectCourseList(page, query);
     }
 
+    /**
+     * 创建课程
+     * 1. 创建实体类
+     * 2. 填充信息到实体类（课程信息）
+     * 3. 调用mybatis-plus的insert方法，插入到课程表中
+     * @param courseDTO
+     * @return
+     */
     @Override
     public CourseVO createCourse(CourseDTO courseDTO) {
         // 设置默认值
@@ -253,6 +275,7 @@ public class CourseServiceImpl implements CourseService {
         } else {
             throw new RuntimeException("课程时间信息不完整");
         }
+
         Course course = new Course();
         BeanUtil.copyProperties(courseDTO, course);
         course.setTeacherId(UserContext.getUser().getId());
@@ -263,13 +286,25 @@ public class CourseServiceImpl implements CourseService {
         return convertToVO(course);
     }
 
+    /**
+     * 更新课程
+     * @param id 课程ID
+     * @param courseDTO 更新的课程信息
+     * @return
+     */
     @Override
     public CourseVO updateCourse(Long id, CourseDTO courseDTO) {
+        /**
+         * 1. 查询课程是否存在
+         */
         Course course = courseMapper.selectById(id);
         if (course == null) {
             throw new RuntimeException("课程不存在");
         }
         BeanUtil.copyProperties(courseDTO, course);
+        /**
+         * 2. 调用updateById方法来更新数据库中的信息
+         */
         courseMapper.updateById(course);
         return convertToVO(course);
     }

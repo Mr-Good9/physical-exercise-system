@@ -36,9 +36,9 @@ public class PhysicalTestServiceImpl extends ServiceImpl<PhysicalTestRecordMappe
     private PhysicalTestRecordMapper physicalTestRecordMapper;
 
     @Override
-    public IPage<PhysicalTestRecordDTO> getTestRecordList(Integer page, Integer pageSize, PhysicalTestQuery query) {
+    public IPage<PhysicalTestRecordDTO> getTestRecordList(Integer currentPage, Integer pageSize, PhysicalTestQuery query) {
         // 创建分页对象，注意页码从1开始
-        Page<PhysicalTestRecordDTO> pageParam = new Page<>(page, pageSize);
+        Page<PhysicalTestRecordDTO> pageParam = new Page<>(currentPage, pageSize);
         // 调用Mapper的分页查询方法
         return baseMapper.selectTestRecordList(pageParam, query);
     }
@@ -71,9 +71,17 @@ public class PhysicalTestServiceImpl extends ServiceImpl<PhysicalTestRecordMappe
         return updateById(record);
     }
 
+    /**
+     *
+     */
     @Override
     public Page<PhysicalTestRecordVO> getStudentTestRecords(Long studentId, String itemCode, Page<PhysicalTestRecord> page) {
         // 构建查询条件
+        /**
+         * 1. 构造查询语句：
+         * 获取当前学生的测试记录，
+         * 按照测试时间降序排序
+         */
         LambdaQueryWrapper<PhysicalTestRecord> wrapper = new LambdaQueryWrapper<PhysicalTestRecord>()
                 .eq(PhysicalTestRecord::getStudentId, studentId)
                 .eq(itemCode != null && !itemCode.isEmpty(), PhysicalTestRecord::getTestItemId,
@@ -119,7 +127,9 @@ public class PhysicalTestServiceImpl extends ServiceImpl<PhysicalTestRecordMappe
     public Map<String, Object> getStudentTestStatistics(Long studentId) {
         Map<String, Object> statistics = new HashMap<>();
 
-        // 获取最新的测试记录
+        /**
+         * 根据学生ID获取最新的测试记录，并按测试日期降序排序，然后取第一条记录
+         */
         PhysicalTestRecord latestRecord = baseMapper.selectOne(
                 new LambdaQueryWrapper<PhysicalTestRecord>()
                         .eq(PhysicalTestRecord::getStudentId, studentId)
@@ -138,7 +148,11 @@ public class PhysicalTestServiceImpl extends ServiceImpl<PhysicalTestRecordMappe
             }
         }
 
-        // 计算平均分
+        /**
+         * 获取学生的平均分数
+         * 1. 根据学生ID查询所有测试记录
+         * 2. 计算所有测试记录的平均分数
+         */
         Double avgScore = baseMapper.selectObjs(
                         new LambdaQueryWrapper<PhysicalTestRecord>()
                                 .select(PhysicalTestRecord::getScore)
@@ -227,7 +241,7 @@ public class PhysicalTestServiceImpl extends ServiceImpl<PhysicalTestRecordMappe
         record.setScore(recordDTO.getScore());
         record.setEvaluation(recordDTO.getEvaluation());
         record.setTeacherComment(recordDTO.getTeacherComment());
-        
+
         // 处理日期转换
         LocalDateTime testDateTime = null;
         if (recordDTO.getTestDate() != null) {
@@ -237,7 +251,7 @@ public class PhysicalTestServiceImpl extends ServiceImpl<PhysicalTestRecordMappe
             testDateTime = LocalDateTime.now();
         }
         record.setTestDate(testDateTime);
-        
+
         record.setCreateTime(LocalDateTime.now());
         record.setUpdateTime(LocalDateTime.now());
         record.setDeleted(0);

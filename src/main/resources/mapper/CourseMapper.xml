@@ -1,18 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.good.physicalexercisesystem.mapper.CourseMapper">
-    
+
     <!-- 基础列 -->
     <sql id="Base_Column_List">
-        id, name, teacher_id, type, time, location, capacity, enrolled, description,
+        id
+        , name, teacher_id, type, time, location, capacity, enrolled, description,
         semester, start_date, end_date, status, enabled, create_time, update_time, deleted
     </sql>
-    
+
     <!-- 分页查询课程列表 -->
+    <!--
+      1. 查询条件：课程名称、课程类型、课程状态
+      2. 如果传递了课程名称、类型、状态，则过滤掉不符合条件的记录
+      3. 按照创建时间降序排序
+      -->
     <select id="selectCourseList" resultType="com.good.physicalexercisesystem.vo.CourseVO">
-        SELECT 
-            c.*,
-            u.name as teacherName
+        SELECT
+        c.*,
+        u.name as teacherName
         FROM pe_course c
         LEFT JOIN sys_user u ON c.teacher_id = u.id
         <where>
@@ -29,4 +35,4 @@
         </where>
         ORDER BY c.create_time DESC
     </select>
-</mapper> 
+</mapper>

@@ -57,7 +57,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public UserProfileVo getProfile(Long id) {
-        // 查询启用状态的用户
+        // 1. 查询启用状态的用户
         User one = getOne(new LambdaQueryWrapper<User>()
                 .eq(User::getId, id)
                 .eq(User::getEnabled, 1));
@@ -65,6 +65,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new UsernameNotFoundException("用户不存在");
         }
         UserProfileVo result = BeanUtil.toBean(one, UserProfileVo.class);
+
+        // 2. 根据用户类型填充数据
         String userType = one.getUserType();
         if (userType.equals("student")) {
             // 联查userInfo表填充数据
@@ -98,6 +100,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         // 密码加密存储
+        // spring security的加密器
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(true); // 设置为启用状态
 
@@ -105,6 +108,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         save(user);
     }
 
+    /**
+     * 1. 在数据库中查找用户名是否存在，如果不存在就抛出异常
+     * 2. 判断用户类型是否匹配，如果不匹配就抛出异常
+     * 3. 判断密码是否正确，如果不正确就抛出异常
+     * 4. 生成jwt令牌（token）
+     * @return
+     */
     @Override
     public String login(String username, String password, String userType) {
         // 查询用户信息
@@ -142,6 +152,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         updateById(user);
     }
 
+
+    /**
+     * 更新用户信息
+     * @param userId 用户ID
+     * @param profileDTO 要更新的信息
+     */
     @Override
     @Transactional
     public void updateProfile(Long userId, UpdateProfileDTO profileDTO) {

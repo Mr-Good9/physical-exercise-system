@@ -39,10 +39,13 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
 
         // 获取学生统计
         TeacherDashboardVO.StudentStats studentStats = new TeacherDashboardVO.StudentStats();
+        // 计算学生总数
         Integer totalStudents = countTotalStudents(teacherId);
         studentStats.setTotal(totalStudents);
+        // 计算新学生数
         Integer newStudents = countNewStudents(teacherId);
         studentStats.setNewCount(newStudents);
+
         // 添加活跃学生统计
         Integer activeStudents = countActiveStudents(teacherId);
         studentStats.setActive(activeStudents);
@@ -145,7 +148,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                 LocalDate.now().withDayOfMonth(1),
                 LocalTime.MIN
         );
-        
+
         return Math.toIntExact(userMapper.selectCount(new LambdaQueryWrapper<User>()
                 .eq(User::getUserType, "student")
                 .eq(User::getDeleted, false)
@@ -161,7 +164,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
      */
     private Integer countActiveStudents(Long teacherId) {
         LocalDateTime oneWeekAgo = LocalDateTime.now().minus(7, ChronoUnit.DAYS);
-        
+
         return Math.toIntExact(userMapper.selectCount(new LambdaQueryWrapper<User>()
                 .eq(User::getUserType, "student")
                 .eq(User::getDeleted, false)

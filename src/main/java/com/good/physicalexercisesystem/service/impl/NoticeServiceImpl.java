@@ -24,6 +24,12 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
     }
 
     @Override
+    /**
+     * 获取最近10条公告
+     * 1. 筛选出启动状态的公告
+     * 2. 根据创建时间降序排序
+     * 3. 取十条
+     */
     public List<Notice> getRecentNotices() {
         return noticeMapper.selectList(
                 new LambdaQueryWrapper<Notice>()

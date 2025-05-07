@@ -31,6 +31,12 @@ public class LogAspect {
     public void logPointCut() {
     }
 
+    /**
+     * 日志功能
+     * 在方法执行后记录日志
+     * 1. 在方法中使用@Log注解
+     * 2. 执行到这个方法时，会获取当前请求的信息和用户信息，记录到数据库中日志表
+     */
     @AfterReturning(pointcut = "logPointCut()")
     public void doAfterReturning(JoinPoint joinPoint) {
         try {

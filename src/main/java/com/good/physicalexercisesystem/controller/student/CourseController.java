@@ -28,12 +28,6 @@ public class CourseController {
 
     /**
      * 获取课程列表
-     *
-     * @param name
-     * @param type
-     * @param current
-     * @param size
-     * @return
      */
     @GetMapping("/list")
     @ApiOperation(value = "获取课程列表")
@@ -44,6 +38,8 @@ public class CourseController {
             @RequestParam(defaultValue = "10") Integer size
     ) {
         Page<Course> page = new Page<>(current, size);
+
+        //TODO 方法具体实现：
         Page<CourseVO> result = courseService.getCourseList(name, type, page);
         // 即使没有数据也返回成功,只是 records 为空数组
         return CommonResult.success(result);
@@ -53,7 +49,7 @@ public class CourseController {
      * 选课
      *
      * @param authentication
-     * @param courseId
+     * @param courseId 课程Id
      * @return
      */
     @ApiOperation(value = "选课")
@@ -70,6 +66,7 @@ public class CourseController {
 
     /**
      * 退课
+     *
      * @param authentication
      * @param courseId
      * @return

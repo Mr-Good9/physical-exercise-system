@@ -59,8 +59,6 @@ public class StudentController {
 
     /**
      * 获取最近课程
-     * @param authentication
-     * @return
      */
     @GetMapping("/courses/recent")
     @ApiOperation(value = "获取最近课程")

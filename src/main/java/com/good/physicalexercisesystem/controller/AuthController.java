@@ -20,6 +20,11 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
+    /**
+     * 用户登录接口
+     * 1. 校验用户名、密码、类型是否正确
+     * 2. 生成token返回给前端，前端就可以根据token来识别是否是登录状态
+     */
     @PostMapping("/login")
     @Log(value = "用户登录", level = "info")
     public CommonResult<Map<String, Object>> login(@Validated @RequestBody LoginDTO loginDTO) {
@@ -33,6 +38,13 @@ public class AuthController {
         return CommonResult.success("登录成功", result);
     }
 
+    /**
+     * 用户注册接口
+     * 1. 在数据库中查询，判断是否存在这个用户名
+     * 2. 对密码加密（使用security的加密器）
+     * 3. 将用户信息存入数据库
+     * 4. 返回注册成功信息
+     */
     @PostMapping("/register")
     @Log(value = "用户注册", level = "info")
     public CommonResult<Void> register(@Validated @RequestBody RegisterDTO registerDTO) {
@@ -51,6 +63,9 @@ public class AuthController {
         return CommonResult.success("注册成功", null);
     }
 
+    /**
+     * 未使用
+     */
     @PostMapping("/reset-password")
     @Log(value = "重置密码", level = "info")
     public CommonResult<Void> resetPassword(@RequestParam String username,

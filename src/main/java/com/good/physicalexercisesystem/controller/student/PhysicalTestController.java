@@ -35,6 +35,9 @@ public class PhysicalTestController {
         return CommonResult.success(physicalTestService.getTestItems());
     }
 
+    /**
+     * 测试记录
+     */
     @GetMapping("/records")
     @ApiOperation(value = "获取身体素质测试记录")
     public CommonResult<Page<PhysicalTestRecordVO>> getTestRecords(
@@ -50,6 +53,11 @@ public class PhysicalTestController {
         );
     }
 
+    /**
+     * 体测记录 - 最近测试成绩
+     * @param authentication
+     * @return
+     */
     @GetMapping("/statistics")
     @ApiOperation(value = "获取身体素质测试统计")
     public CommonResult<Map<String, Object>> getTestStatistics(Authentication authentication) {

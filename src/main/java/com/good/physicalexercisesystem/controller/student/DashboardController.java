@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+/**
+ * 学生仪表盘控制器
+ */
 @RestController("StudentDashboardController")
 @RequestMapping("/student/dashboard")
 public class DashboardController {
@@ -42,14 +45,16 @@ public class DashboardController {
         User user = userService.findByUsername(authentication.getName());
         DashboardVO vo = new DashboardVO();
 
-        // 获取课程统计
+        //TODO 获取课程统计
         Map<String, Integer> courseStats = courseService.getStudentCourseStatistics(user.getId());
+
         vo.setTotalCourses(courseStats.getOrDefault("total", 0));
         vo.setRequiredCourses(courseStats.getOrDefault("required", 0));
         vo.setOptionalCourses(courseStats.getOrDefault("optional", 0));
 
-        // 获取体测统计
+        //TODO 获取体测统计
         Map<String, Object> testStats = physicalTestService.getStudentTestStatistics(user.getId());
+
         vo.setLatestScore(Double.valueOf(testStats.getOrDefault("latestScore", 0.0).toString()));
         vo.setLatestTestType(testStats.getOrDefault("latestTestType", "").toString());
         vo.setAverageScore(Double.valueOf(testStats.getOrDefault("averageScore", 0.0).toString()));
